@@ -275,7 +275,7 @@ class DiscreteThermalParticle(Particle):
     released: bool = False
     upward_velocity : float = 0.0
 
-    def step_dynamics(self, heightmap, force = -9.8):
+    def step_dynamics(self, heightmap, force = -9.8, wind = (0,0)):
         # Move to the highest adjacent point
         map_width = len(heightmap)
         map_height = len(heightmap[1])
@@ -287,13 +287,13 @@ class DiscreteThermalParticle(Particle):
         up = [0, 1, current_height]
 
         if (self.position_x > 0):
-            left[2] = heightmap[self.position_x-1][self.position_y]
+            left[2] = heightmap[self.position_x-1][self.position_y] - wind[0]/20
         if (self.position_x < map_width-1):
-            right[2] = heightmap[self.position_x+1][self.position_y]
+            right[2] = heightmap[self.position_x+1][self.position_y] + wind[0]/20
         if (self.position_y > 0):
-            down[2] = heightmap[self.position_x][self.position_y-1]
+            down[2] = heightmap[self.position_x][self.position_y-1] - wind[1]/20
         if (self.position_y < map_height-1):
-            up[2] = heightmap[self.position_x][self.position_y+1]
+            up[2] = heightmap[self.position_x][self.position_y+1] + wind[1]/20
 
         next_position = (0, 0, current_height)
         # Identify the highest adjacent point
