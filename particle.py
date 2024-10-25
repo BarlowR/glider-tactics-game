@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 import numpy as np
 import unittest 
+import random
 
 FRICTION = 0.2
-STICKINESS = 0.02
+STICKINESS = 0.05    
+SEA_LEVEL_PROBABILITY = 0.25
+MAX_PROABILITY_CEILING = 3
 
 @dataclass
 class Particle():
@@ -274,6 +277,8 @@ class TestParticle(unittest.TestCase):
 class DiscreteThermalParticle(Particle):
     released: bool = False
     upward_velocity : float = 0.0
+    
+    heat_energy = 100
 
     def step_dynamics(self, heightmap, force = -9.8, wind = (0,0)):
         # Move to the highest adjacent point
@@ -287,13 +292,13 @@ class DiscreteThermalParticle(Particle):
         up = [0, 1, current_height]
 
         if (self.position_x > 0):
-            left[2] = heightmap[self.position_x-1][self.position_y] - wind[0]/20
+            left[2] = heightmap[self.position_x-1][self.position_y] - wind[0]/40
         if (self.position_x < map_width-1):
-            right[2] = heightmap[self.position_x+1][self.position_y] + wind[0]/20
+            right[2] = heightmap[self.position_x+1][self.position_y] + wind[0]/40
         if (self.position_y > 0):
-            down[2] = heightmap[self.position_x][self.position_y-1] - wind[1]/20
+            down[2] = heightmap[self.position_x][self.position_y-1] - wind[1]/40
         if (self.position_y < map_height-1):
-            up[2] = heightmap[self.position_x][self.position_y+1] + wind[1]/20
+            up[2] = heightmap[self.position_x][self.position_y+1] + wind[1]/40
 
         next_position = (0, 0, current_height)
         # Identify the highest adjacent point
@@ -320,9 +325,127 @@ class DiscreteThermalParticle(Particle):
         self.position_x += next_position[0]
         self.position_y += next_position[1]
 
-        
+        # As we move, lose some heat to the outside environment
+        self.heat_energy *= 0.9
 
+def elevation_distribution(elevation):
+    if (elevation > MAX_PROABILITY_CEILING):
+        return 1
+
+    return ((elevation + SEA_LEVEL_PROBABILITY) / 
+            (MAX_PROABILITY_CEILING+SEA_LEVEL_PROBABILITY))
+
+class ThermalParticleDistribution():
+    particles = []
+    particle_trail = []
+    height_map = None
+    albedo_map = None 
+    map_height = 0
+    map_width = 0
+    thermal_movement_simulated = False   
+    thermals = {}
+
+    def __init__(self, number_of_particles, height_map, albedo_map=None):
         
+        if albedo_map:
+            assert(len(height_map) == len(albedo_map))
+            assert(len(height_map[0]) == len(albedo_map[0]))
+
+        self.height_map = height_map
+        self.albedo_map = albedo_map
+        self.map_width = len(height_map)
+        self.map_height = len(height_map[1])
+        assert(self.map_width > 0)
+        assert(self.map_height > 0)
+    
+        self.particles = self.distribute_particles(number_of_particles)
+
+
+    def distribute_particles(self, desired_number_of_particles):
+        """
+        Distribute thermal particles over a map given a height map and an albedo map.
+        Both maps should have a structure of map[x][y] = value. 
+        Height map should have a lower bound of 0. Values map roughly to kilometers, I.E. a value of 1 means 1000m of elevation.
+        Albedo map shoule be on the range 0-1, with 0 as a perfect absorber and 1 as a perfect reflector.
+        https://en.wikipedia.org/wiki/Albedo
+        Note: 
+        This function is not efficient for very high numbers of particles, as particles are drawn randomly and may be culled based on
+        the distributions. TODO for later is to rewrite this to instead draw each particle from the distributions. 
+        """
+
+
+        particles = []
+        while len(particles) < desired_number_of_particles:
+            # Create a particle random;
+            new_particle = DiscreteThermalParticle(random.randrange(self.map_width), random.randrange(self.map_height))
+            
+            # pull the height of the particle & pull its probability
+            elevation = self.height_map[new_particle.position_x][new_particle.position_y]
+            elevation_probability = elevation_distribution(elevation)
+
+            # If we don't have a albedo map, just use the height map
+            total_probability = elevation_probability
+            if self.albedo_map:
+                albedo = self.albedo_map[new_particle.position_x][new_particle.position_y]
+                albedo_probability = 1-albedo
+                # If there is an albedo map, combine it with the elevation probabiolity and 
+                # value it 2:1 against the elevation map
+                total_probability = ((2 * albedo_probability) + elevation_probability)/3
+
+            # Make a random draw based on the total probability. If it passes, add the particle to the list
+            if (random.random() < total_probability):
+                particles.append(new_particle)
+
+        return particles
+
+    def check_all_released(self):
+        """ 
+        Check if all the thermal particles have released
+        """
+        all_released = True
+        for particle in self.particles:
+            all_released = all_released and particle.released
+        return all_released
+
+    def aggregate_particles(self):
+        assert(self.thermal_movement_simulated)
+        for particle in self.particles:
+
+            # Discare anything on the edge of the map
+            if (particle.position_x == 0) or (particle.position_x == self.map_width - 1):
+                continue
+            if (particle.position_y == 0) or (particle.position_y == self.map_height -1):
+                continue
+
+            # Add the particle's energy to the thermal map
+            if (particle.position_x, particle.position_y) in self.thermals.keys():
+                self.thermals[(particle.position_x, particle.position_y)] += particle.heat_energy
+            else:
+                self.thermals[(particle.position_x, particle.position_y)] = particle.heat_energy
+
+
+
+    def simulate_particles(self, wind):
+        """
+        Simulate thermal particle dynamics until all have release from the landscape
+        """
+        self.particle_trail = [{"x": [], "y":[], "heat":[]} for _ in range(len(self.particles))]
+
+        for _ in range (10000):
+            if self.check_all_released():
+                break
+            for index, particle in enumerate(self.particles):
+                    if not particle.released:
+                        particle.step_dynamics(self.height_map, wind = wind)
+                        self.particle_trail[index]["x"].append(particle.position_x)
+                        self.particle_trail[index]["y"].append(particle.position_y)
+                        self.particle_trail[index]["heat"].append(particle.heat_energy)
+
+
+        assert (self.check_all_released())
+        self.thermal_movement_simulated = True
+        self.aggregate_particles()
+
 
 
 if __name__ == "__main__":
