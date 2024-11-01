@@ -3,14 +3,15 @@ import { distance } from 'three/webgpu';
 
 
 class Glider {
-    constructor(starting_position = [40, 40, 5]){
+    constructor(starting_position = [40, 40, 3]){
         // TODO: replace this with a glider model 
         const geometry = new THREE.BoxGeometry( 0.5, 0.5, 0.5); 
 
         const material = new THREE.MeshBasicMaterial( {color: 0xFFff00, wireframe:true} ); 
         this.mesh = new THREE.Mesh( geometry, material ); 
 
-        // This should probably be an even divisor of 1000
+        // This should probably be an even divisor of 1000. 
+        // This 
         this.speed = 20;
 
         this.velocity = {x: 0,
@@ -19,6 +20,7 @@ class Glider {
         this.position = {x: starting_position[0],
                          y: starting_position[1],
                          z: starting_position[2]};
+        this.crashed = false;
 
         const line_material = new THREE.LineBasicMaterial({
             color: 0x0000ff
@@ -64,30 +66,35 @@ class Glider {
             }
         }
     }
+    // Could potentially move lift/sink calculation serverside to obfuscate 
     lift_and_sink(thermal_map, elevation_map){
         const x_index = Math.round(this.position.x);
         const y_index = Math.round(this.position.y);
-        const lift_index = thermal_map[x_index][y_index] - 0.5;
+        const lift_index = thermal_map[x_index][y_index];
         
         const agl = this.position.z - elevation_map[x_index][y_index];
         // reduce thermal strength linearly within 500 m of the ground
         const agl_index = (agl > 0.5) ? 1.0 : agl + 0.5;
-
-        // altitude;
-        const inversion = 5 + elevation_map[x_index][y_index]/2;
-
-        const inversion_index = 1 - (agl * agl)/ ( inversion * inversion);
-
-        const lift = lift_index * agl_index * inversion_index;
-        console.log(lift_index, agl_index, inversion_index);
         
-        const sink_rate = this.velocity.z = -(this.speed/20000);
-        this.velocity.z =   lift_index > 0 ? 
-                                lift * 0.005 :
-                                -0.004;
-        this.velocity.z += -sink_rate;
+        const inversion = 5 + elevation_map[x_index][y_index]/2;
+        
+        const inversion_index =  (this.position.z < inversion) ? 
+        (1 - (this.position.z * this.position.z * this.position.z)/ ( inversion * inversion * inversion)) :
+        0;
+        
+        const lift = lift_index * agl_index * inversion_index;
+        console.log("lift: ", lift_index, " agl: ", agl_index, " inversion: ", inversion_index)
+        
+        const sink_rate = -(this.speed/15000);
+        this.velocity.z = lift_index > 0 ? 
+                                lift * 0.001 :
+                                0
+        this.velocity.z += sink_rate;
     }
     move(tick){
+        if (this.crashed){
+            return;
+        }
         // Update position from velocity
         this.position.x += this.velocity.x;
         this.position.y += this.velocity.y;
@@ -98,11 +105,20 @@ class Glider {
         // There has to be a better way to assign properties
         this.mesh.position.x = this.position.x;
         this.mesh.position.y = this.position.y;
-        this.mesh.position.z = this.position.z;
+        this.mesh.position.z = this.position.z + 0.5;
 
         this.line.position.x = this.position.x;
         this.line.position.y = this.position.y;
         this.line.position.z = this.position.z;
+    }
+    check_collision(height_map){
+        const x_index = Math.round(this.position.x);
+        const y_index = Math.round(this.position.y);
+        const ground = height_map[x_index][y_index];
+        this.agl = this.position.z - ground;
+        if (this.agl <= 0){
+            this.crashed = true;
+        }
     }
 }
 

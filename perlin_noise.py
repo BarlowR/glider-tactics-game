@@ -71,8 +71,8 @@ def noise_map(x_dim, y_dim, scale_x, scale_y = -1, z_pos = 0, x_offset = 0, y_of
 
     for i in range(y_dim):
         for j in range(x_dim):
-            x_pos_world = (j+x_offset)/dimensional_scale * scale_x
-            y_pos_world = (i+y_offset)/dimensional_scale * scale_y
+            x_pos_world = (j+x_offset)/80 * scale_x
+            y_pos_world = (i+y_offset)/80 * scale_y
             grid[j, i] = improved_perlin_noise(x_pos_world, y_pos_world, z_pos, fade=quint_fade)
     
     return grid

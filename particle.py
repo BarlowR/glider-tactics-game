@@ -7,6 +7,7 @@ FRICTION = 0.2
 STICKINESS = 0.05    
 SEA_LEVEL_PROBABILITY = 0.25
 MAX_PROABILITY_CEILING = 3
+MAX_THERMAL_STRENGTH = 5
 
 @dataclass
 class Particle():
@@ -344,6 +345,7 @@ class ThermalParticleDistribution():
     map_width = 0
     thermal_movement_simulated = False   
     thermals = {}
+    thermal_map = [[]]
 
     def __init__(self, number_of_particles, height_map, albedo_map=None):
         
@@ -409,19 +411,42 @@ class ThermalParticleDistribution():
 
     def aggregate_particles(self):
         assert(self.thermal_movement_simulated)
+        self.thermal_map = [[0 for _ in range(self.map_height)] for _ in range(self.map_width)]
+        max_value = 0
         for particle in self.particles:
 
-            # Discare anything on the edge of the map
+            # Discard anything on the edge of the map
             if (particle.position_x == 0) or (particle.position_x == self.map_width - 1):
                 continue
             if (particle.position_y == 0) or (particle.position_y == self.map_height -1):
                 continue
 
-            # Add the particle's energy to the thermal map
+            # Add the particle's energy to the thermal particle map
             if (particle.position_x, particle.position_y) in self.thermals.keys():
                 self.thermals[(particle.position_x, particle.position_y)] += particle.heat_energy
             else:
                 self.thermals[(particle.position_x, particle.position_y)] = particle.heat_energy
+
+            self.thermal_map[particle.position_x][particle.position_y] += particle.heat_energy
+            for x_delta, y_delta, factor in [   [-1, -1, 0.2],
+                                                [-1,  1, 0.2],
+                                                [ 1, -1, 0.2],
+                                                [ 1,  1, 0.2],
+                                                [-1,  0, 0.4],
+                                                [ 0, -1, 0.4],
+                                                [ 0,  1, 0.4],
+                                                [ 1,  0, 0.4]] :
+                # Make thermals wider
+                # We be sure to not exceed bounds here as we skip any particles on the edges above
+                self.thermal_map[particle.position_x + x_delta][particle.position_y + y_delta] += (particle.heat_energy * factor)
+                
+            if self.thermal_map[particle.position_x][particle.position_y] > max_value:
+                max_value = self.thermal_map[particle.position_x][particle.position_y]
+            
+            # Normalize to MAX_THERMAL_STRENGTH
+        print(max_value)
+        self.thermal_map = [[MAX_THERMAL_STRENGTH * np.sqrt(thermal/max_value) for thermal in row] for row in self.thermal_map]
+
 
 
 

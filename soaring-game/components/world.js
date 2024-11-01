@@ -5,7 +5,7 @@ class World {
         this.camera = createCamera(dim_x, dim_y, camera_x_offset, camera_y_offset);
         this.scene = createScene();
         this.ticks = 0;
-        this.tick_functions = [];
+        this.tick_functions = {};
         this.renderer = createRenderer(dim_x, dim_y);
         container.appendChild( this.renderer.domElement );
         this.renderer.setAnimationLoop( this.animate );
@@ -26,12 +26,12 @@ class World {
         if (!this.tick_functions){
             return;
         }
-        for (const f of this.tick_functions){
-            f(this.ticks);
+        for (const m in this.tick_functions){
+            this.tick_functions[m](this.ticks);
         }
     }
-    register_tick_function(f){
-        this.tick_functions.push(f);
+    register_tick_function(f, id){
+        this.tick_functions[id] = f;
     }
 }
 
