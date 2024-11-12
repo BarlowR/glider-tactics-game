@@ -54,13 +54,10 @@ function main(){
         world.camera.position.z += camera_spring_constant * ((object_position.z + camera_z_offset) - world.camera.position.z);
     }
 
-    world.register_tick_function(function(tick){glider.check_latest_action(latest_event, tick)}, 0);
-    world.register_tick_function(function(tick){glider.lift_and_sink(thermalmap_const, heightmap_const)}, 1);
+    world.register_tick_function(function(tick){glider.update(tick, latest_event, heightmap_const, thermalmap_const)}, 0);
     world.register_tick_function(function(tick){flight_instrument.update_instrument(glider.velocity.z * 1000, 
-                                                                                    (glider.position.z * 100).toFixed(0) * 10,
-                                                                                    (glider.agl * 100).toFixed(0) * 10)}, 2);
-    world.register_tick_function(function(tick){glider.move()}, 3);
-    world.register_tick_function(function(tick){glider.check_collision(heightmap_const)}, 4);
+        (glider.position.z * 100).toFixed(0) * 10,
+        (glider.agl * 100).toFixed(0) * 10)}, 2);
     world.register_tick_function(function(t){move_camera_to_follow_object(glider.position)}, 5);
     world.register_tick_function(function(t){
         if (glider.crashed || (t > 10000)){
@@ -81,6 +78,7 @@ function main(){
             world.stop();
         }
     }, 6);
+    
 
     world.start();
 }

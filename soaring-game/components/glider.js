@@ -1,15 +1,31 @@
 import * as THREE from 'three';
 import { distance } from 'three/webgpu';
 
+const k_rotation_ticks = 20
+const unit_length = 100 //m
 
 class Glider {
     constructor(starting_position = [40, 40, 3]){
-        // TODO: replace this with a glider model 
-        const geometry = new THREE.BoxGeometry( 0.5, 0.5, 0.5); 
+        this.sprite_materials = [
+            new THREE.TextureLoader().load( 'assets/toyplane/up.png' ),
+            new THREE.TextureLoader().load( 'assets/toyplane/right.png' ),
+            new THREE.TextureLoader().load( 'assets/toyplane/down.png' ),
+            new THREE.TextureLoader().load( 'assets/toyplane/left.png' ),
+            new THREE.TextureLoader().load( 'assets/toyplane/up_bank.png' ),
+            new THREE.TextureLoader().load( 'assets/toyplane/left_bank.png' ),
+            new THREE.TextureLoader().load( 'assets/toyplane/down_bank.png' ),
+            new THREE.TextureLoader().load( 'assets/toyplane/right_bank.png' ),
+            
+        ]
 
-        const material = new THREE.MeshBasicMaterial( {color: 0xFFff00, wireframe:true} ); 
-        this.mesh = new THREE.Mesh( geometry, material ); 
-
+        for (var tex in this.sprite_materials){
+            this.sprite_materials[tex].minFilter = THREE.NearestFilter;
+            this.sprite_materials[tex].magFilter = THREE.NearestFilter;
+        }
+        const material = new THREE.SpriteMaterial( { map: this.sprite_materials["top"] } );
+        
+        this.mesh = new THREE.Sprite( material );
+        this.mesh.scale.set(3, 2, 1);
         // This should probably be an even divisor of 1000. 
         // This 
         this.speed = 20;
@@ -23,7 +39,7 @@ class Glider {
         this.crashed = false;
 
         const line_material = new THREE.LineBasicMaterial({
-            color: 0x0000ff
+            color: 0x0000ff,
         });
         
         const points = [];
@@ -82,9 +98,7 @@ class Glider {
         (1 - (this.position.z * this.position.z * this.position.z)/ ( inversion * inversion * inversion)) :
         0;
         
-        const lift = lift_index * agl_index * inversion_index;
-        console.log("lift: ", lift_index, " agl: ", agl_index, " inversion: ", inversion_index)
-        
+        const lift = lift_index * agl_index * inversion_index;        
         const sink_rate = -(this.speed/15000);
         this.velocity.z = lift_index > 0 ? 
                                 lift * 0.001 :
@@ -119,6 +133,35 @@ class Glider {
         if (this.agl <= 0){
             this.crashed = true;
         }
+    }
+    update_sprite(tick){
+        if (this.velocity.x == 0 && this.velocity.y == 0){
+            var circle = (Math.floor(tick / k_rotation_ticks) % 4);
+            if (circle == 0){
+                this.mesh.material.map = this.sprite_materials[4];
+            } else if (circle == 1) {
+                this.mesh.material.map = this.sprite_materials[5];
+            } else if (circle == 2) {
+                this.mesh.material.map = this.sprite_materials[6];
+            } else if (circle == 3) {
+                this.mesh.material.map = this.sprite_materials[7];
+            }
+        } else if (this.velocity.y > 0){
+            this.mesh.material.map = this.sprite_materials[0];
+        } else if (this.velocity.x > 0) {
+            this.mesh.material.map = this.sprite_materials[1];
+        } else if (this.velocity.y < 0) {
+            this.mesh.material.map = this.sprite_materials[2];
+        } else if (this.velocity.x < 0) {
+            this.mesh.material.map = this.sprite_materials[3];
+        }
+    }
+    update(tick, latest_event, height_map, thermal_map){
+        this.check_latest_action(latest_event, tick);
+        this.lift_and_sink(thermal_map, height_map);
+        this.move();
+        this.update_sprite(tick);
+        this.check_collision(thermal_map);
     }
 }
 

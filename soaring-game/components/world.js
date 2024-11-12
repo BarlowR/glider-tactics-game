@@ -9,6 +9,9 @@ class World {
         this.renderer = createRenderer(dim_x, dim_y);
         container.appendChild( this.renderer.domElement );
         this.renderer.setAnimationLoop( this.animate );
+        this.now = 
+
+        this.last_tick_millis = new Date().getTime(); 
     }
     start() {
         this.renderer.setAnimationLoop(() => {
@@ -22,12 +25,19 @@ class World {
         this.renderer.setAnimationLoop(null);
     }
     tick() {
-        this.ticks += 1;
-        if (!this.tick_functions){
-            return;
-        }
-        for (const m in this.tick_functions){
-            this.tick_functions[m](this.ticks);
+        const current_millis = new Date().getTime(); 
+        const elapsed_time = current_millis - this.last_tick_millis; 
+        // don't render faster than 60fps.
+        // TODO: Seperate out physics from render timing. This is likely a pain
+        if (elapsed_time > (1000 / 60)){
+            this.ticks += 1;
+            if (!this.tick_functions){
+                return;
+            }
+            for (const m in this.tick_functions){
+                this.tick_functions[m](this.ticks);
+            }
+            this.last_tick_millis = new Date().getTime();
         }
     }
     register_tick_function(f, id){
