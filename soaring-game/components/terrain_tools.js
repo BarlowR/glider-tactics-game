@@ -81,7 +81,7 @@ function height_map_to_color_map(height_map){
     return color_map
 }
 
-function create_terrain_mesh(height_map, thermal_map){
+function create_terrain_mesh(height_map){
     const geometry = new THREE.BufferGeometry();
     const color_map = height_map_to_color_map(height_map);
     const [mesh_triangles, colors] = flatten_to_triangle_mesh(height_map, color_map);

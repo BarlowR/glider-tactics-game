@@ -31,7 +31,7 @@ function main(){
 
     // Create the terrain
     // TODO: pull this from server
-    const terrain = create_terrain_mesh(heightmap_const, thermalmap_const);
+    const terrain = create_terrain_mesh(heightmap_const);
 
     // Make the glider object
     var glider = new Glider(starting_position);
