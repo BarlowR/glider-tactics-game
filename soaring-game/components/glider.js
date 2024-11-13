@@ -117,7 +117,7 @@ class Glider {
         // There has to be a better way to assign properties?
         this.mesh.position.x = this.position.x;
         this.mesh.position.y = this.position.y;
-        this.mesh.position.z = this.position.z + 0.5;
+        this.mesh.position.z = this.position.z;
 
         this.line.position.x = this.position.x;
         this.line.position.y = this.position.y;
@@ -159,7 +159,7 @@ class Glider {
         this.lift_and_sink(thermal_map, height_map);
         this.move(dt);
         this.update_sprite(tick);
-        this.check_collision(thermal_map);
+        this.check_collision(height_map);
     }
 }
 
