@@ -35,7 +35,7 @@ class World {
                 return;
             }
             for (const m in this.tick_functions){
-                this.tick_functions[m](this.ticks);
+                this.tick_functions[m](this.ticks, elapsed_time);
             }
             this.last_tick_millis = new Date().getTime();
         }

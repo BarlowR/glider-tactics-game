@@ -2,7 +2,9 @@ import * as THREE from 'three';
 import { distance } from 'three/webgpu';
 
 const k_rotation_ticks = 20
-const unit_length = 100 //m
+const k_horizontal_unit_length = 2500 //m
+const k_vertical_unit_length = 500 //m
+const k_time_scaling = 100 //m
 
 class Glider {
     constructor(starting_position = [40, 40, 3]){
@@ -25,7 +27,8 @@ class Glider {
         const material = new THREE.SpriteMaterial( { map: this.sprite_materials["top"] } );
         
         this.mesh = new THREE.Sprite( material );
-        this.mesh.scale.set(3, 2, 1);
+        this.mesh.position.set(0, 0, -5);
+        this.mesh.scale.set(2, 2/1.5, 1);
         // This should probably be an even divisor of 1000. 
         // This 
         this.speed = 20;
@@ -63,24 +66,23 @@ class Glider {
         // This is written to put all event handling at intersections on the 1 unit grid. 
         // I will probably need to improve this at some point. 
         // This could also be handled by setting integer positions at set times and interpolating inbetween?
-        if (tick % (1000/this.speed) == 0){
-            if (latest_event == ["ArrowRight"]){
-                this.velocity.x =  (this.speed/1000);    
-                this.velocity.y =  0.00 
-            } else if (latest_event == ["ArrowLeft"]){
-                this.velocity.x = -(this.speed/1000);    
-                this.velocity.y =  0.00 
-            } else if (latest_event == ["ArrowUp"]){
-                this.velocity.x =  0.00;           
-                this.velocity.y =  (this.speed/1000) 
-            } else if (latest_event == ["ArrowDown"]){
-                this.velocity.x =  0.00;           
-                this.velocity.y = -(this.speed/1000) 
-            } else if (latest_event == [" "]){
-                this.velocity.x =  0.00;           
-                this.velocity.y =  0.00 
-            }
+        if (latest_event == ["ArrowRight"]){
+            this.velocity.x = 40.0;    
+            this.velocity.y =  0.0 
+        } else if (latest_event == ["ArrowLeft"]){
+            this.velocity.x = -40.0;;    
+            this.velocity.y =  0.0 
+        } else if (latest_event == ["ArrowUp"]){
+            this.velocity.x =  0.0;           
+            this.velocity.y = 40.0; 
+        } else if (latest_event == ["ArrowDown"]){
+            this.velocity.x =  0.0;           
+            this.velocity.y = -40.0; 
+        } else if (latest_event == [" "]){
+            this.velocity.x =  0.0;           
+            this.velocity.y =  0.0 ;
         }
+
     }
     // Could potentially move lift/sink calculation serverside to obfuscate 
     lift_and_sink(thermal_map, elevation_map){
@@ -99,24 +101,20 @@ class Glider {
         0;
         
         const lift = lift_index * agl_index * inversion_index;        
-        const sink_rate = -(this.speed/15000);
-        this.velocity.z = lift_index > 0 ? 
-                                lift * 0.001 :
-                                0
+        const sink_rate = -1
+        this.velocity.z = lift_index > 0 ? lift : 0;
         this.velocity.z += sink_rate;
     }
-    move(tick){
+    move(dt){
         if (this.crashed){
             return;
         }
         // Update position from velocity
-        this.position.x += this.velocity.x;
-        this.position.y += this.velocity.y;
-        this.position.z += this.velocity.z;
-
-        // TODO rotation
+        this.position.x += this.velocity.x * 1/k_horizontal_unit_length * dt/1000 * k_time_scaling;
+        this.position.y += this.velocity.y * 1/k_horizontal_unit_length * dt/1000 * k_time_scaling;
+        this.position.z += this.velocity.z * 1/k_vertical_unit_length * dt/1000 * k_time_scaling;
         
-        // There has to be a better way to assign properties
+        // There has to be a better way to assign properties?
         this.mesh.position.x = this.position.x;
         this.mesh.position.y = this.position.y;
         this.mesh.position.z = this.position.z + 0.5;
@@ -156,10 +154,10 @@ class Glider {
             this.mesh.material.map = this.sprite_materials[3];
         }
     }
-    update(tick, latest_event, height_map, thermal_map){
+    update(tick, dt, latest_event, height_map, thermal_map){
         this.check_latest_action(latest_event, tick);
         this.lift_and_sink(thermal_map, height_map);
-        this.move();
+        this.move(dt);
         this.update_sprite(tick);
         this.check_collision(thermal_map);
     }

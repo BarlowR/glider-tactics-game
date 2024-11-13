@@ -54,13 +54,13 @@ function main(){
         world.camera.position.z += camera_spring_constant * ((object_position.z + camera_z_offset) - world.camera.position.z);
     }
 
-    world.register_tick_function(function(tick){glider.update(tick, latest_event, heightmap_const, thermalmap_const)}, 0);
-    world.register_tick_function(function(tick){flight_instrument.update_instrument(glider.velocity.z * 1000, 
+    world.register_tick_function(function(tick, dt){glider.update(tick, dt, latest_event, heightmap_const, thermalmap_const)}, 0);
+    world.register_tick_function(function(tick, dt){flight_instrument.update_instrument(glider.velocity.z, 
         (glider.position.z * 100).toFixed(0) * 10,
         (glider.agl * 100).toFixed(0) * 10)}, 2);
-    world.register_tick_function(function(t){move_camera_to_follow_object(glider.position)}, 5);
-    world.register_tick_function(function(t){
-        if (glider.crashed || (t > 10000)){
+    world.register_tick_function(function(tick, dt){move_camera_to_follow_object(glider.position)}, 5);
+    world.register_tick_function(function(tick, dt){
+        if (glider.crashed || (tick > 10000)){
             const end = document.createElement("div");
             document.body.appendChild(end);
             
