@@ -14,6 +14,8 @@ const camera_spring_constant = 0.05;
 
 const starting_position = [150, 150, 4];
 
+const height_scaling_factor = 1.5;
+
 function main(){
     var world = new World(document.body, 
                           dim_x, 
@@ -31,10 +33,10 @@ function main(){
 
     // Create the terrain
     // TODO: pull this from server
-    const terrain = create_terrain_mesh(heightmap_const);
+    const terrain = create_terrain_mesh(heightmap_const, height_scaling_factor);
 
     // Make the glider object
-    var glider = new Glider(starting_position);
+    var glider = new Glider(starting_position, height_scaling_factor);
 
     // Add meshes to the scene
     world.scene.add(light, terrain, glider.mesh, glider.line);

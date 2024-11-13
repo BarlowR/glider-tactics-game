@@ -7,7 +7,7 @@ const k_vertical_unit_length = 500 //m
 const k_time_scaling = 100 //m
 
 class Glider {
-    constructor(starting_position = [40, 40, 3]){
+    constructor(starting_position = [40, 40, 3], height_scaling_factor){
         this.sprite_materials = [
             new THREE.TextureLoader().load( 'assets/toyplane/up.png' ),
             new THREE.TextureLoader().load( 'assets/toyplane/right.png' ),
@@ -19,6 +19,8 @@ class Glider {
             new THREE.TextureLoader().load( 'assets/toyplane/right_bank.png' ),
             
         ]
+
+        this.height_scaling_factor = height_scaling_factor;
 
         for (var tex in this.sprite_materials){
             this.sprite_materials[tex].minFilter = THREE.NearestFilter;
@@ -117,11 +119,11 @@ class Glider {
         // There has to be a better way to assign properties?
         this.mesh.position.x = this.position.x;
         this.mesh.position.y = this.position.y;
-        this.mesh.position.z = this.position.z;
+        this.mesh.position.z = this.position.z * this.height_scaling_factor;
 
-        this.line.position.x = this.position.x;
-        this.line.position.y = this.position.y;
-        this.line.position.z = this.position.z;
+        this.line.position.x = this.mesh.position.x;
+        this.line.position.y = this.mesh.position.y;
+        this.line.position.z = this.mesh.position.z;
     }
     check_collision(height_map){
         const x_index = Math.round(this.position.x);

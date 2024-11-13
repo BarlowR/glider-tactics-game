@@ -81,7 +81,7 @@ function height_map_to_color_map(height_map){
     return color_map
 }
 
-function create_terrain_mesh(height_map){
+function create_terrain_mesh(height_map, height_scaling_factor){
     const geometry = new THREE.BufferGeometry();
     const color_map = height_map_to_color_map(height_map);
     const [mesh_triangles, colors] = flatten_to_triangle_mesh(height_map, color_map);
@@ -93,7 +93,9 @@ function create_terrain_mesh(height_map){
     geometry.computeVertexNormals();
     const material = new THREE.MeshStandardMaterial({ vertexColors:true, polygonOffset: true, polygonOffsetUnits: -0.1});
     const line = new THREE.LineBasicMaterial( { color: 0xffffff } );
-    const mesh = new THREE.Mesh( geometry, material );
+    var mesh = new THREE.Mesh( geometry, material );
+
+    mesh.scale.set(1, 1, height_scaling_factor)
 
     // Wireframe rendering
     var wireframe = new THREE.LineSegments( geometry, line );
