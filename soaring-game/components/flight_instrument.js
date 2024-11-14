@@ -7,16 +7,12 @@ class FlightInstrument{
                 base_color = "#000000",
                 highlight_color = "#e1d9d9",
                 dial_color = "#ffffff"){
-        const fi_canvas = document.createElement("canvas");
-        dom_parent. appendChild(fi_canvas);
-        
-        fi_canvas.style.width = "200px";
-        fi_canvas.style.height = "200px";
+        var fi_canvas = document.createElement("canvas");
+        fi_canvas.id = "flight_instrument"
+        dom_parent.appendChild(fi_canvas);
+
         fi_canvas.width = unit;
         fi_canvas.height = unit;
-        fi_canvas.style.position = 'absolute';
-        fi_canvas.style.left = '780px';
-        fi_canvas.style.top = '10px';
 
         this.base_color = base_color;
         this.highlight_color = highlight_color;

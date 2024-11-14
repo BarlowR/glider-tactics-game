@@ -7,6 +7,7 @@ class World {
         this.ticks = 0;
         this.tick_functions = {};
         this.renderer = createRenderer(dim_x, dim_y);
+        this.renderer.domElement.id = "game_canvas";
         container.appendChild( this.renderer.domElement );
         this.renderer.setAnimationLoop( this.animate );
         this.now = 

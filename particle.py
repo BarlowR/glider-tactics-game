@@ -443,11 +443,9 @@ class ThermalParticleDistribution():
             if self.thermal_map[particle.position_x][particle.position_y] > max_value:
                 max_value = self.thermal_map[particle.position_x][particle.position_y]
             
-            # Normalize to MAX_THERMAL_STRENGTH
+        # Normalize with distribution
         print(max_value)
-        self.thermal_map = [[MAX_THERMAL_STRENGTH * np.sqrt(thermal/max_value) for thermal in row] for row in self.thermal_map]
-
-
+        self.thermal_map = [[thermal_distribution(thermal/max_value) for thermal in row] for row in self.thermal_map]
 
 
     def simulate_particles(self, wind):
@@ -471,7 +469,13 @@ class ThermalParticleDistribution():
         self.thermal_movement_simulated = True
         self.aggregate_particles()
 
-
+# Make good thermals more likely
+def thermal_distribution(normalized_thermal):
+    normalized_thermal = np.sqrt(normalized_thermal)
+    if normalized_thermal > (6/10):
+        normalized_thermal = (6/10)
+    normalized_thermal *= 10/6
+    return normalized_thermal
 
 if __name__ == "__main__":
     unittest.main() 

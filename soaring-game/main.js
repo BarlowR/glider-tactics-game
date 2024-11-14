@@ -17,19 +17,20 @@ const starting_position = [150, 150, 4];
 const height_scaling_factor = 1.5;
 
 function main(){
-    var world = new World(document.body, 
+    const game_window_div = document.getElementById("game_window");
+    var world = new World(game_window_div, 
                           dim_x, 
                           dim_y,
                           camera_x_offset,
                           camera_y_offset);
 
-    var flight_instrument = new FlightInstrument(document.body);
+    var flight_instrument = new FlightInstrument(game_window_div);
     
     world.camera.position.x = starting_position[0]
     world.camera.position.y = starting_position[1]
 
     // Add a light
-    var light = createDirectionalLight([-10, 10, 15]);
+    var light = createDirectionalLight([-10, 10, 30]);
 
     // Create the terrain
     // TODO: pull this from server
@@ -43,11 +44,14 @@ function main(){
 
     // Setup an event queue with a length of one ;) 
     var latest_event = ""; 
+    var reset = false; 
     onkeydown = onkeyup = function(e){
         if (e.type == 'keydown'){
             latest_event = e.key;
         }
     }
+
+    var start_time = new Date().getTime();
 
     // Update the camera's positon 
     function move_camera_to_follow_object(object_position){
@@ -60,9 +64,13 @@ function main(){
     world.register_tick_function(function(tick, dt){flight_instrument.update_instrument(glider.velocity.z, 
         (glider.position.z * 100).toFixed(0) * 10,
         (glider.agl * 100).toFixed(0) * 10)}, 2);
+        
     world.register_tick_function(function(tick, dt){move_camera_to_follow_object(glider.position)}, 5);
     world.register_tick_function(function(tick, dt){
-        if (glider.crashed || (tick > 10000)){
+        const elapsed_millis = new Date().getTime() - start_time;
+        const elapsed_s = elapsed_millis/1000;
+
+        if (glider.crashed || (elapsed_s > 120)){
             const end = document.createElement("div");
             document.body.appendChild(end);
             
@@ -80,6 +88,18 @@ function main(){
             world.stop();
         }
     }, 6);
+    world.register_tick_function(function(tick, dt){
+        if (reset){
+            glider.position.x  = starting_position[0];
+            glider.position.y  = starting_position[1];
+            glider.position.z  = starting_position[2];
+            world.camera.position.x  = starting_position[0];
+            world.camera.position.y  = starting_position[1];
+            world.camera.position.z  = starting_position[2];
+            reset = false;
+        }
+    });
+
     
 
     world.start();

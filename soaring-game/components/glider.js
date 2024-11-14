@@ -3,11 +3,11 @@ import { distance } from 'three/webgpu';
 
 const k_rotation_ticks = 20
 const k_horizontal_unit_length = 2500 //m
-const k_vertical_unit_length = 500 //m
+const k_vertical_unit_length = 1000 //m
 const k_time_scaling = 100 //m
 
 class Glider {
-    constructor(starting_position = [40, 40, 3], height_scaling_factor){
+    constructor(starting_position = [40, 40, 3], height_scaling_factor, max_thermal = 7){
         this.sprite_materials = [
             new THREE.TextureLoader().load( 'assets/toyplane/up.png' ),
             new THREE.TextureLoader().load( 'assets/toyplane/right.png' ),
@@ -21,6 +21,7 @@ class Glider {
         ]
 
         this.height_scaling_factor = height_scaling_factor;
+        this.max_thermal = max_thermal;
 
         for (var tex in this.sprite_materials){
             this.sprite_materials[tex].minFilter = THREE.NearestFilter;
@@ -102,7 +103,7 @@ class Glider {
         (1 - (this.position.z * this.position.z * this.position.z)/ ( inversion * inversion * inversion)) :
         0;
         
-        const lift = lift_index * agl_index * inversion_index;        
+        const lift = lift_index * agl_index * inversion_index * this.max_thermal;        
         const sink_rate = -1
         this.velocity.z = lift_index > 0 ? lift : 0;
         this.velocity.z += sink_rate;
