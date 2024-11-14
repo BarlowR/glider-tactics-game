@@ -14,12 +14,12 @@ const starting_position = [150, 150, 4];
 
 const height_scaling_factor = 1.5;
 
-function main(){
-    var soaring_game = new SoaringGame( dim_x,
-                                    dim_y,
-                                    starting_position,
-                                    heightmap_const,
-                                    thermalmap_const)
+function main() {
+    var soaring_game = new SoaringGame(dim_x,
+        dim_y,
+        starting_position,
+        heightmap_const,
+        thermalmap_const)
     soaring_game.start();
 }
 
