@@ -35,14 +35,17 @@ class World {
             if (!this.tick_functions){
                 return;
             }
-            for (const m in this.tick_functions){
-                this.tick_functions[m](this.ticks, elapsed_time);
+            for (const name in this.tick_functions){
+                this.tick_functions[name](this.ticks, elapsed_time);
             }
             this.last_tick_millis = new Date().getTime();
         }
     }
-    register_tick_function(f, id){
-        this.tick_functions[id] = f;
+    register_tick_function(f, name){
+        this.tick_functions[name] = f;
+    }
+    remove_tick_function(name){
+        delete this.tick_functions[name];
     }
 }
 

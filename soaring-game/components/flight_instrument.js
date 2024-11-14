@@ -4,11 +4,14 @@ const dial_spring_const = 0.04;
 
 class FlightInstrument{
     constructor(dom_parent,
+                window_width = 1000,
                 base_color = "#000000",
                 highlight_color = "#e1d9d9",
                 dial_color = "#ffffff"){
         var fi_canvas = document.createElement("canvas");
         fi_canvas.id = "flight_instrument"
+        fi_canvas.style.position = "relative"
+        fi_canvas.style.left = (window_width - 220) + "px";
         dom_parent.appendChild(fi_canvas);
 
         fi_canvas.width = unit;
@@ -92,6 +95,11 @@ class FlightInstrument{
         this.fi_canvas_context.stroke();
     }
     draw_altitude_readout(msl, agl){
+        // Convert from units of km to units of m and round to 10s of meters
+        const msl_formatted = (msl * 100).toFixed(0) * 10;
+        const agl_formatted = (agl * 100).toFixed(0) * 10;
+
+        // Draw text
         this.fi_canvas_context.fillStyle = this.highlight_color;
         this.fi_canvas_context.beginPath();
         this.fi_canvas_context.roundRect(unit/4, 1/4*unit, unit/2, 1/2 * unit, unit/6)
@@ -101,8 +109,8 @@ class FlightInstrument{
         this.fi_canvas_context.textAlign = "right";
         this.fi_canvas_context.textBaseline = "middle";
         this.fi_canvas_context.font = "40px Courier New";
-        this.fi_canvas_context.fillText(agl, .55 * unit, 3/8 * unit);
-        this.fi_canvas_context.fillText(msl, .55 * unit, 5/8 * unit);
+        this.fi_canvas_context.fillText(agl_formatted, .55 * unit, 3/8 * unit);
+        this.fi_canvas_context.fillText(msl_formatted, .55 * unit, 5/8 * unit);
         this.fi_canvas_context.textAlign = "left";
         this.fi_canvas_context.textBaseline = "top";
         this.fi_canvas_context.font = "20px Courier New";
