@@ -17,7 +17,8 @@ canvas {
 
 #flight_instrument{            
     width : 200px;
-    height : 200px;
+    height : 320px;
+    top: 10px;
 }
 
 #game_canvas{

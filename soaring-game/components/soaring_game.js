@@ -10,8 +10,31 @@ const camera_z_offset = 10;
 const camera_spring_constant = 0.05;
 
 // const starting_position = [150, 150, 4];
-
 const height_scaling_factor = 1.5;
+
+const glide_polar_js3 = {
+    80: -0.7,
+    90: -0.67,
+    100: -0.65,
+    110: -0.65,
+    120: -0.67,
+    130: -0.70,
+    140: -0.75,
+    150: -0.82,
+    160: -0.95,
+    170: -1.07,
+    180: -1.2,
+    190: -1.34,
+    200: -1.5,
+    210: -1.7,
+    220: -1.93,
+    230: -2.2,
+    240: -2.5,
+    250: -2.85,
+    260: -3.4
+}
+
+const velocity_ne = 260;
 
 class SoaringGame {
     constructor(dim_x,
@@ -28,30 +51,30 @@ class SoaringGame {
         this.thermal_map = thermal_map;
         this.starting_position = starting_position;
         this.world_start_time = new Date().getTime();
+        this.end_time = new Date().getTime();
         this.world = new World(game_window_div,
             dim_x,
             dim_y,
             camera_x_offset,
             camera_y_offset);
         this.flight_instrument = new FlightInstrument(game_window_div, dim_x);
+        this.started = false;
         this.latest_event = "";
         this.reset = false;
 
         // Set initial camera position
-        this.world.camera.position.x = this.starting_position[0] + camera_x_offset;
-        this.world.camera.position.y = this.starting_position[1] + camera_y_offset;
+        this.world.camera.position.x = this.starting_position[0] - camera_x_offset;
+        this.world.camera.position.y = this.starting_position[1] - camera_y_offset;
         this.world.camera.position.z = this.starting_position[2] + camera_z_offset;
 
         // Add a light
         this.light = createDirectionalLight(light_position);
 
         // Make the glider object
-        this.user_glider = new Glider(this.starting_position, height_scaling_factor);
+        this.user_glider = new Glider(this.starting_position, glide_polar_js3, velocity_ne, height_scaling_factor);
 
         // Add glider and light to scene
         this.world.scene.add(this.light, this.user_glider.mesh, this.user_glider.line);
-
-        console.log(this.user_glider.position.x);
 
         // Create the terrain. (This adds the mesh to the scene so no need to add it to the scene)
         this.set_terrain_mesh(height_map, thermal_map, height_scaling_factor);
@@ -61,6 +84,9 @@ class SoaringGame {
 
         // register world tick functions
         this.register_tick_functions();
+
+        this.world.render_single_frame()
+        this.start_popup()
     }
 
     set_terrain_mesh = (height_map, thermal_map, scaling_factor) => {
@@ -84,12 +110,50 @@ class SoaringGame {
     register_event_functions = () => {
         // Setup an event queue with a length of one ;) 
         onkeydown = onkeyup = (e) => {
+            if (!this.started && ((new Date().getTime() - this.end_time) > 1000) ){
+                this.world.start();
+                this.started = true
+                this.user_glider.reset()
+                var start = document.getElementById("start_popup")
+                if (start) {
+                    start.style.visibility = "hidden";
+                    return
+                }
+                // var end = document.getElementById("end_popup")
+                // if (end) {
+                //     end.style.visibility = "hidden";
+                //     return
+                // }
+            }
             if (e.type == 'keydown') {
                 this.latest_event = e.key;
-            } else if (e.type == 'keyup' && e.key == "r") {
-                this.reset = true;
+            } else if (e.type == 'keyup') {
+                if (e.key == "r"){
+                    this.reset = true;
+                } else if (e.key == this.latest_event){
+                    this.latest_event = "";
+                }
             }
         }
+    }
+
+    start_popup = () => {
+        var end = document.getElementById("start_popup")
+        if (end) {
+            end.style.visibility = "visible";
+            return
+        }
+        end = document.createElement("div");
+        end.id = "start_popup";
+        document.body.appendChild(end);
+
+        end.style.width = "300px";
+        end.style.height = "100px";
+        end.style.position = 'absolute';
+        end.style.backgroundColor = 'white';
+        end.style.top = '400px';
+        end.style.left = '400px';
+        end.innerText = "Press any key to begin";
     }
 
     end_popup = () => {
@@ -103,6 +167,8 @@ class SoaringGame {
         end.style.top = '400px';
         end.style.left = '400px';
         if (this.user_glider.crashed) { end.innerText = "Crashed....\n"; }
+        else if (this.user_glider.flutter) { end.innerText = "Fluttered....\n"; }
+        else if (this.user_glider.stalled) { end.innerText = "Stalled....\n"; }
         else { end.innerText = "Time's Up \n"; }
         const x_dist = Math.abs(this.starting_position[0] - this.user_glider.position.x);
         const y_dist = Math.abs(this.starting_position[1] - this.user_glider.position.y);
@@ -113,17 +179,19 @@ class SoaringGame {
         const elapsed_millis = new Date().getTime() - this.world_start_time;
         const elapsed_s = elapsed_millis / 1000;
 
-        if (this.user_glider.crashed || (elapsed_s > 120)) {
+        if (this.user_glider.crashed || this.user_glider.flutter || this.user_glider.stalled || (elapsed_s > 120)) {
             this.end_popup()
             this.world.stop();
+            this.end_time = new Date().getTime();
         }
     }
 
     reset_glider_and_camera = (reset_position) => {
         if (this.reset) {
-            this.user_glider.position.x = reset_position[0];
-            this.user_glider.position.y = reset_position[1];
-            this.user_glider.position.z = reset_position[2];
+            this.user_glider.reset()
+            this.world.stop();
+            this.started = false;
+            this.start_popup()
             this.reset = false;
         }
     }
@@ -131,7 +199,6 @@ class SoaringGame {
     register_tick_functions = () => {
         // Update glider
         this.world.register_tick_function((tick, dt) => {
-            console.log(this.latest_event);
             this.user_glider.update(tick,
                 dt,
                 this.latest_event,
@@ -142,7 +209,8 @@ class SoaringGame {
         this.world.register_tick_function((tick, dt) => {
             this.flight_instrument.update_instrument(this.user_glider.velocity.z,
                 this.user_glider.position.z,
-                this.user_glider.agl)
+                this.user_glider.agl, 
+                this.user_glider.airspeed)
         }, "update_instrument");
 
         // Move the camera to follow the glider positon

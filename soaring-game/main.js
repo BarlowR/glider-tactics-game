@@ -10,7 +10,7 @@ const camera_y_offset = 10;
 const camera_z_offset = 10;
 const camera_spring_constant = 0.05;
 
-const starting_position = [150, 150, 4];
+const starting_position = [250, 250, 4];
 
 const height_scaling_factor = 1.5;
 
@@ -20,7 +20,6 @@ function main() {
         starting_position,
         heightmap_const,
         thermalmap_const)
-    soaring_game.start();
 }
 
 window.addEventListener('load', main)

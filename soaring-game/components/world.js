@@ -22,6 +22,9 @@ class World {
             this.renderer.render(this.scene, this.camera);
         });
     }
+    render_single_frame(){
+        this.renderer.render(this.scene, this.camera);
+    }
     stop() {
         this.renderer.setAnimationLoop(null);
     }
