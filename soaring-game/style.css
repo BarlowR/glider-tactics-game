@@ -15,12 +15,6 @@ canvas {
     margin-top: 10px;
 }
 
-#flight_instrument{            
-    width : 200px;
-    height : 320px;
-    top: 10px;
-}
-
 #game_canvas{
     position: absolute;
     left: 0;

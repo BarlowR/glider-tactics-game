@@ -6,21 +6,29 @@ const dial_spring_const = 0.04;
 const velocity_dial_spring_const = 0.12;
 const outer_radius = unit * 0.45;
 
+const date_display =  { hour: 'long', minute: 'numeric', second: 'long'};
+
 class FlightInstrument {
     constructor(dom_parent,
         window_width = 1000,
         base_color = "#000000",
         highlight_color = "#e1d9d9",
         dial_color = "#ffffff",
-        panel_color = "#6e6e6e") {
+        panel_color = "#6e6e6e", 
+        instrument_panel_scaling = 0.5, 
+        padding = 10) {
         var fi_canvas = document.createElement("canvas");
         fi_canvas.id = "flight_instrument"
-        fi_canvas.style.position = "relative"
-        fi_canvas.style.left = (window_width - 220) + "px";
         dom_parent.appendChild(fi_canvas);
+        
+        fi_canvas.width = 1.6 * unit;
+        fi_canvas.height = unit;
+        fi_canvas.style.width = fi_canvas.width * instrument_panel_scaling + "px";
+        fi_canvas.style.height = fi_canvas.height * instrument_panel_scaling + "px";
+        fi_canvas.style.position = "relative"
 
-        fi_canvas.width = unit;
-        fi_canvas.height = 1.6 * unit;
+        fi_canvas.style.left = (window_width - (fi_canvas.width * instrument_panel_scaling + padding)) + "px";
+        fi_canvas.style.top = padding + "px";
 
         this.base_color = base_color;
         this.highlight_color = highlight_color;
@@ -32,15 +40,16 @@ class FlightInstrument {
         this.fi_canvas_context = fi_canvas.getContext("2d");
         this.update_instrument(2, 1000, 800, 100);
     }
-    update_instrument = (vertical_speed, msl, agl, velocity)  => {
+    update_instrument = (vertical_speed, msl, agl, velocity, time)  => {
         // Draw background 
 
-
+        
         this.vertical_dial_speed += dial_spring_const * (vertical_speed - this.vertical_dial_speed);
         this.velocity_dial_speed += velocity_dial_spring_const * (velocity - this.velocity_dial_speed);
 
         this.draw_vertical_speed_instrument(180, 180, outer_radius * .9, msl, agl);
-        this.draw_velocity_instrument(270, 460, outer_radius * 0.6);
+        this.draw_velocity_instrument(460, 220, outer_radius * 0.6);
+        this.draw_timer(460, 60, outer_radius * 0.6 * 2, time);
     }
 
     draw_vertical_speed_instrument = (center_x, center_y, radius, msl, agl) => {
@@ -252,6 +261,34 @@ class FlightInstrument {
         this.fi_canvas_context.moveTo(center_x, center_y);
         this.fi_canvas_context.lineTo(dial_end_x, dial_end_y);
         this.fi_canvas_context.stroke();
+    }
+
+    draw_timer = (center_x, center_y, width, timer_value) => {
+        this.fi_canvas_context.fillStyle = this.base_color;
+        this.fi_canvas_context.beginPath();
+        const height = 0.3 * width;
+        this.fi_canvas_context.roundRect(center_x - width/2, 
+                                         center_y - height/2, 
+                                         width, 
+                                         height, standard_radius);
+        this.fi_canvas_context.fill();
+        const total_seconds = Math.floor(timer_value / 1000) % 86400;
+        const hours = Math.floor(total_seconds / 3600);
+        const minutes = Math.floor(total_seconds / 60) - (hours * 60);
+        const seconds = total_seconds - ((minutes * 60) + (hours * 3600));
+        console.log(hours, minutes, seconds)
+
+        const hours_str = String(hours).padStart(2, '0');
+        const minutes_str = String(minutes).padStart(2, '0');
+        const seconds_str = String(seconds).padStart(2, '0');
+        const time_str = hours_str + ":" + minutes_str + ":" + seconds_str;
+
+        this.fi_canvas_context.fillStyle = this.highlight_color;
+        this.fi_canvas_context.textAlign = "center";
+        this.fi_canvas_context.textBaseline = "middle";
+        this.fi_canvas_context.font = width * .16 +"px Courier New";
+        this.fi_canvas_context.fillText(time_str, center_x, center_y);
+        this.fi_canvas_context.stroke()
     }
 }
 

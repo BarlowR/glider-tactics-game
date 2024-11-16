@@ -210,7 +210,8 @@ class SoaringGame {
             this.flight_instrument.update_instrument(this.user_glider.velocity.z,
                 this.user_glider.position.z,
                 this.user_glider.agl, 
-                this.user_glider.airspeed)
+                this.user_glider.airspeed, 
+                new Date().getTime() - this.world_start_time)
         }, "update_instrument");
 
         // Move the camera to follow the glider positon
