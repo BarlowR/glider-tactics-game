@@ -67,6 +67,8 @@ class Glider {
         const line_geometry = new THREE.BufferGeometry().setFromPoints(points);
 
         this.line = new THREE.Line(line_geometry, line_material);
+        this.move(0);
+        this.update_sprite(0)
     }
 
     reset = () => {

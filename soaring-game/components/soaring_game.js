@@ -2,6 +2,7 @@ import { World, createDirectionalLight } from "./world.js"
 import { create_terrain_mesh } from "./terrain_tools.js"
 import { FlightInstrument } from "./flight_instrument.js"
 import { Glider } from "./glider.js"
+import { Menu } from "./menu.js"
 
 
 const camera_x_offset = 10;
@@ -43,36 +44,44 @@ class SoaringGame {
         thermal_map,
         light_position = [-10, 10, 30]) {
 
+        // Look for window div and set its width 
         var game_window_div = document.getElementById("game_window");
         game_window_div.style.width = dim_x + "px";
 
+        // Setup member variables
         this.height_map = height_map;
         this.thermal_map = thermal_map;
         this.starting_position = starting_position;
         this.world_start_time = new Date().getTime();
         this.end_time = new Date().getTime();
+        this.started = false;
+        this.latest_event = "";
+        this.reset = false;
+
+        // Create the "world"
         this.world = new World(game_window_div,
             dim_x,
             dim_y,
             camera_x_offset,
             camera_y_offset);
-        this.flight_instrument = new FlightInstrument(game_window_div, dim_x);
-        this.started = false;
-        this.latest_event = "";
-        this.reset = false;
-
+        
         // Set initial camera position
         this.world.camera.position.x = this.starting_position[0] - camera_x_offset;
         this.world.camera.position.y = this.starting_position[1] - camera_y_offset;
         this.world.camera.position.z = this.starting_position[2] + camera_z_offset;
+        
+        // Create flight instrument
+        this.flight_instrument = new FlightInstrument(game_window_div, dim_x);
 
-        // Add a light
-        this.light = createDirectionalLight(light_position);
+        this.menu = new Menu (game_window_div, dim_x, dim_y);
 
-        // Make the glider object
+        // Create the glider object
         this.user_glider = new Glider(this.starting_position, glide_polar_js3, velocity_ne, height_scaling_factor);
 
-        // Add glider and light to scene
+        // Add a light to the world
+        this.light = createDirectionalLight(light_position);
+
+        // Add glider and light to world scene
         this.world.scene.add(this.light, this.user_glider.mesh, this.user_glider.line);
 
         // Create the terrain. (This adds the mesh to the scene so no need to add it to the scene)
@@ -133,6 +142,10 @@ class SoaringGame {
                 }
             }
         }
+
+        onclick = (e) => {
+            this.menu.onclick(e);
+        }
     }
 
     start_popup = () => {
@@ -189,7 +202,6 @@ class SoaringGame {
             this.user_glider.reset()
             this.world.stop();
             this.started = false;
-            this.start_popup()
             this.reset = false;
         }
     }

@@ -276,7 +276,6 @@ class FlightInstrument {
         const hours = Math.floor(total_seconds / 3600);
         const minutes = Math.floor(total_seconds / 60) - (hours * 60);
         const seconds = total_seconds - ((minutes * 60) + (hours * 3600));
-        console.log(hours, minutes, seconds)
 
         const hours_str = String(hours).padStart(2, '0');
         const minutes_str = String(minutes).padStart(2, '0');
