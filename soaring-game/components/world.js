@@ -10,9 +10,7 @@ class World {
         this.renderer.domElement.id = "game_canvas";
         container.appendChild(this.renderer.domElement);
         this.renderer.setAnimationLoop(this.animate);
-        this.now =
-
-            this.last_tick_millis = new Date().getTime();
+        this.last_tick_millis = new Date().getTime();
     }
     start() {
         this.renderer.setAnimationLoop(() => {

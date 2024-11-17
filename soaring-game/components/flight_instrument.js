@@ -38,7 +38,7 @@ class FlightInstrument {
         this.vertical_dial_speed = 0;
         this.velocity_dial_speed = 0;
         this.fi_canvas_context = fi_canvas.getContext("2d");
-        this.update_instrument(2, 1000, 800, 100);
+        this.update_instrument(2, 2, 2, 100, 120000);
     }
     update_instrument = (vertical_speed, msl, agl, velocity, time)  => {
         // Draw background 

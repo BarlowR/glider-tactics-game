@@ -33,7 +33,6 @@ const glide_polar_js3 = {
     250: -2.85,
     260: -3.4
 }
-
 const velocity_ne = 260;
 
 class SoaringGame {
@@ -111,8 +110,7 @@ class SoaringGame {
         // Setup an event queue with a length of one ;) 
         onkeydown = onkeyup = (e) => {
             if (!this.started && ((new Date().getTime() - this.end_time) > 1000) ){
-                this.world.start();
-                this.started = true
+                this.start();
                 this.user_glider.reset()
                 var start = document.getElementById("start_popup")
                 if (start) {
@@ -211,7 +209,7 @@ class SoaringGame {
                 this.user_glider.position.z,
                 this.user_glider.agl, 
                 this.user_glider.airspeed, 
-                new Date().getTime() - this.world_start_time)
+                (this.world_start_time + 120000) - new Date().getTime() )
         }, "update_instrument");
 
         // Move the camera to follow the glider positon
@@ -230,6 +228,8 @@ class SoaringGame {
     }
 
     start = () => {
+        this.world_start_time = new Date().getTime();
+        this.started = true
         this.world.start();
     }
     stop = () => {
