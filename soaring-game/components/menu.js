@@ -66,11 +66,6 @@ class Menu {
         this.panel_color = panel_color;   
         
         this.buttons = {}
-
-        this.fill_background(this.panel_color);
-
-
-        
     }
 
     populate_start_menu(){
