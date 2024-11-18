@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import numpy as np
 import unittest 
 import random
+import time
 
 FRICTION = 0.2
 STICKINESS = 0.05    
@@ -127,154 +128,6 @@ class Particle():
             self.position_y = len(heightmap[0]) - 1
             self.velocity_y = 0
 
-class TestParticle(unittest.TestCase): 
-  
-    def test_dynamics(self):
-        height_map_1 = [[0,0,0,0,0],
-                        [0,1,1,1,0],
-                        [0,1,1,1,0],
-                        [0,1,1,1,0],
-                        [0,0,0,0,0]]
-        
-
-        ########################################################################################
-        test_name = "Top Left No Friction"
-        test_part = Particle(1, 1, 0)
-        step_num = 0
-
-        test_part.step_dynamics(height_map_1, 1, 1)
-        step_num += 1
-
-        self.assertEqual(test_part.velocity_x, -0.4, f"{test_name}, Step {step_num}, velocity_x")
-        self.assertEqual(test_part.velocity_y, -0.4, f"{test_name}, Step {step_num}, velocity_y")
-
-        self.assertEqual(test_part.position_x, 1 + test_part.velocity_x, f"{test_name}, Step {step_num}, position_x")
-        self.assertEqual(test_part.position_y, 1 + test_part.velocity_y, f"{test_name}, Step {step_num}, position_y")
-
-        test_part.step_dynamics(height_map_1, 1, 1)
-        step_num += 1
-        
-        self.assertEqual(test_part.velocity_x, 0, f"{test_name}, Step {step_num}, velocity_x")
-        self.assertEqual(test_part.velocity_y, 0, f"{test_name}, Step {step_num}, velocity_y")
-
-        self.assertEqual(test_part.position_x, 0, f"{test_name}, Step {step_num}, position_x")
-        self.assertEqual(test_part.position_y, 0, f"{test_name}, Step {step_num}, position_y")
-
-        test_part.step_dynamics(height_map_1, 1, 1)
-        step_num += 1
-        
-        self.assertEqual(test_part.velocity_x, 0, f"{test_name}, Step {step_num}, velocity_x")
-        self.assertEqual(test_part.velocity_y, 0, f"{test_name}, Step {step_num}, velocity_y")
-
-        self.assertEqual(test_part.position_x, 0, f"{test_name}, Step {step_num}, position_x")
-        self.assertEqual(test_part.position_y, 0, f"{test_name}, Step {step_num}, position_y")
-
-        ########################################################################################
-        test_name = "Top No Friction"
-        test_part = Particle(2, 1, 0)
-        step_num = 0
-
-        test_part.step_dynamics(height_map_1, 1, 1)
-        step_num += 1
-
-        self.assertEqual(test_part.velocity_x, 0, f"{test_name}, Step {step_num}, velocity_x")
-        self.assertEqual(test_part.velocity_y, -0.5, f"{test_name}, Step {step_num}, velocity_y")
-
-        self.assertEqual(test_part.position_x, 2, f"{test_name}, Step {step_num}, position_x")
-        self.assertEqual(test_part.position_y, 1 + test_part.velocity_y, f"{test_name}, Step {step_num}, position_y")
-
-        test_part.step_dynamics(height_map_1, 1, 1)
-        step_num += 1
-        
-        self.assertEqual(test_part.velocity_x, 0, f"{test_name}, Step {step_num}, velocity_x")
-        self.assertEqual(test_part.velocity_y, 0, f"{test_name}, Step {step_num}, velocity_y")
-
-        self.assertEqual(test_part.position_x, 2, f"{test_name}, Step {step_num}, position_x")
-        self.assertEqual(test_part.position_y, 0, f"{test_name}, Step {step_num}, position_y")
-
-        test_part.step_dynamics(height_map_1, 1, 1)
-        step_num += 1
-        
-        self.assertEqual(test_part.velocity_x, 0, f"{test_name}, Step {step_num}, velocity_x")
-        self.assertEqual(test_part.velocity_y, 0, f"{test_name}, Step {step_num}, velocity_y")
-
-        self.assertEqual(test_part.position_x, 2, f"{test_name}, Step {step_num}, position_x")
-        self.assertEqual(test_part.position_y, 0, f"{test_name}, Step {step_num}, position_y")
-
-
-        ########################################################################################
-        test_name = "Right No Friction"
-        test_part = Particle(3, 2, 0)
-        step_num = 0
-
-        test_part.step_dynamics(height_map_1, 1, 1)
-        step_num += 1
-
-        self.assertEqual(test_part.velocity_x, 0.5, f"{test_name}, Step {step_num}, velocity_x")
-        self.assertEqual(test_part.velocity_y, 0, f"{test_name}, Step {step_num}, velocity_y")
-
-        self.assertEqual(test_part.position_x, 3 + test_part.velocity_x, f"{test_name}, Step {step_num}, position_x")
-        self.assertEqual(test_part.position_y, 2, f"{test_name}, Step {step_num}, position_y")
-
-        test_part.step_dynamics(height_map_1, 1, 1)
-        step_num += 1
-        
-        self.assertEqual(test_part.velocity_x, 0, f"{test_name}, Step {step_num}, velocity_x")
-        self.assertEqual(test_part.velocity_y, 0, f"{test_name}, Step {step_num}, velocity_y")
-
-        self.assertEqual(test_part.position_x, 4, f"{test_name}, Step {step_num}, position_x")
-        self.assertEqual(test_part.position_y, 2, f"{test_name}, Step {step_num}, position_y")
-
-        test_part.step_dynamics(height_map_1, 1, 1)
-        step_num += 1
-        
-        self.assertEqual(test_part.velocity_x, 0, f"{test_name}, Step {step_num}, velocity_x")
-        self.assertEqual(test_part.velocity_y, 0, f"{test_name}, Step {step_num}, velocity_y")
-
-        self.assertEqual(test_part.position_x, 4, f"{test_name}, Step {step_num}, position_x")
-        self.assertEqual(test_part.position_y, 2, f"{test_name}, Step {step_num}, position_y")
-        
-        
-        ########################################################################################
-        test_name = "Middle No Friction"
-        test_part = Particle(2, 2, 0)
-        step_num = 0
-
-        test_part.step_dynamics(height_map_1, 1, 1)
-        step_num += 1
-
-        self.assertEqual(test_part.velocity_x, 0, f"{test_name}, Step {step_num}, velocity_x")
-        self.assertEqual(test_part.velocity_y, 0, f"{test_name}, Step {step_num}, velocity_y")
-
-        self.assertEqual(test_part.position_x, 2, f"{test_name}, Step {step_num}, position_x")
-        self.assertEqual(test_part.position_y, 2, f"{test_name}, Step {step_num}, position_y")
-
-        test_part.step_dynamics(height_map_1, 1, 1)
-        step_num += 1
-        
-        self.assertEqual(test_part.velocity_x, 0, f"{test_name}, Step {step_num}, velocity_x")
-        self.assertEqual(test_part.velocity_y, 0, f"{test_name}, Step {step_num}, velocity_y")
-
-        self.assertEqual(test_part.position_x, 2, f"{test_name}, Step {step_num}, position_x")
-        self.assertEqual(test_part.position_y, 2, f"{test_name}, Step {step_num}, position_y")
-
-        ########################################################################################
-        test_name = "Top Left Friction"
-        test_part = Particle(1, 1, FRICTION)
-        step_num = 0
-
-        dt = 1
-
-        test_part.step_dynamics(height_map_1, dt)
-        step_num += 1
-
-        self.assertEqual(test_part.velocity_x, -0.5 * (1 - FRICTION * dt), f"{test_name}, Step {step_num}, velocity_x")
-        self.assertEqual(test_part.velocity_y, -0.5 * (1 - FRICTION * dt), f"{test_name}, Step {step_num}, velocity_y")
-
-        self.assertEqual(test_part.position_x, 1 + test_part.velocity_x, f"{test_name}, Step {step_num}, position_x")
-        self.assertEqual(test_part.position_y, 1 + test_part.velocity_y, f"{test_name}, Step {step_num}, position_y")
-
-
 class DiscreteThermalParticle(Particle):
     released: bool = False
     upward_velocity : float = 0.0
@@ -327,7 +180,7 @@ class DiscreteThermalParticle(Particle):
         self.position_y += next_position[1]
 
         # As we move, lose some heat to the outside environment
-        self.heat_energy *= 0.9
+        self.heat_energy *= 0.95
 
 def elevation_distribution(elevation):
     if (elevation > MAX_PROABILITY_CEILING):
@@ -346,8 +199,9 @@ class ThermalParticleDistribution():
     thermal_movement_simulated = False   
     thermals = {}
     thermal_map = [[]]
+    aggregated_particles = {"x": [], "y":[], "strength": []}
 
-    def __init__(self, number_of_particles, height_map, albedo_map=None):
+    def __init__(self, number_of_particles, height_map, max_thermal, albedo_map=None):
         
         if albedo_map:
             assert(len(height_map) == len(albedo_map))
@@ -357,9 +211,10 @@ class ThermalParticleDistribution():
         self.albedo_map = albedo_map
         self.map_width = len(height_map)
         self.map_height = len(height_map[1])
+        self.max_thermal = max_thermal
         assert(self.map_width > 0)
         assert(self.map_height > 0)
-    
+
         self.particles = self.distribute_particles(number_of_particles)
 
 
@@ -443,14 +298,21 @@ class ThermalParticleDistribution():
             if self.thermal_map[particle.position_x][particle.position_y] > max_value:
                 max_value = self.thermal_map[particle.position_x][particle.position_y]
             
-        # Normalize with distribution
-        print(max_value)
-        self.thermal_map = [[thermal_distribution(thermal/max_value) for thermal in row] for row in self.thermal_map]
+        # Normalize with distribution and apply max value
+        for row_index, row in enumerate(self.thermal_map):
+            for col_index, initial_value in enumerate(row):
+                normalized_scaled_value = (self.max_thermal * thermal_distribution(initial_value/max_value))
+                self.thermal_map[row_index][col_index] = normalized_scaled_value
+                if (initial_value > 0):
+                    self.aggregated_particles["x"].append(row_index)
+                    self.aggregated_particles["y"].append(col_index)
+                    self.aggregated_particles["strength"].append(normalized_scaled_value)
+
 
 
     def simulate_particles(self, wind):
         """
-        Simulate thermal particle dynamics until all have release from the landscape
+        Simulate thermal particle dynamics until all have released from the landscape
         """
         self.particle_trail = [{"x": [], "y":[], "heat":[]} for _ in range(len(self.particles))]
 

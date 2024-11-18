@@ -37,18 +37,23 @@ def normalize(terrain):
 
     
 def generate_big_ranges(dim_x, dim_y):
-    noise_layers = [perlin_noise.noise_map(dim_x, dim_y, i, z_pos=random.random() * 10) for i in range (1, 50, 5)]
-    map_layer = np.sum([noise_layers[1]*10, noise_layers[3]*2, noise_layers[4]*5], axis=0)
+    noise_layers = [ 3 * perlin_noise.noise_map(dim_x, dim_y, 1,               z_pos=random.random() * 10), 
+                     8 * perlin_noise.noise_map(dim_x, dim_y, 5,  scale_y = 2, z_pos=random.random() * 10), 
+                     2 * perlin_noise.noise_map(dim_x, dim_y, 15, scale_y = 5, z_pos=random.random() * 10), 
+                     5 * perlin_noise.noise_map(dim_x, dim_y, 20,              z_pos=random.random() * 10)]
+    map_layer = np.sum(noise_layers, axis=0)
     map_layer += 2
     map_layer = normalize(map_layer)
     map_layer = flatten(map_layer, 0, above=True)
     # map_layer = augment(map_layer, sigmoid)
     map_layer *= 4
     return map_layer
+    
 
 def generate_little_ranges(dim_x, dim_y):
-    noise_layers = [perlin_noise.noise_map(dim_x, dim_y, i, z_pos=random.random() * 10) for i in range (1, 50, 5)]
-    map_layer = np.sum([noise_layers[2]*10, noise_layers[8]*4], axis=0)
+    noise_layers = [10 * perlin_noise.noise_map(dim_x, dim_y, 10, z_pos=random.random() * 10), 
+                     4 * perlin_noise.noise_map(dim_x, dim_y, 40, z_pos=random.random() * 10)]
+    map_layer = np.sum(noise_layers, axis=0)
     map_layer = normalize(map_layer)
     map_layer = flatten(map_layer, 0, above=True)
     map_layer *= 2
