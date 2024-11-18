@@ -74,7 +74,6 @@ class Button {
         return false;
     }
 }
-
 class Menu {
     constructor(canvas_element) {
         this.canvas_element = canvas_element;
@@ -143,7 +142,6 @@ class Menu {
         }
     }
 }
-
 class MainMenu extends Menu {
     build_menu = (menu_context, background_color) =>{
         this.fill_background(background_color);
@@ -173,7 +171,6 @@ class MainMenu extends Menu {
         this.register_button(settings_menu);
     }
 }
-
 class SettingsMenu extends Menu {
     build_menu = (menu_context, background_color) =>{
         this.fill_background(background_color);
@@ -255,7 +252,7 @@ class HiddenMenu extends Menu {
     }
 }
 
-class GameMenu {
+class MenuContainer {
     constructor(dom_parent,
         width,
         height,
@@ -305,4 +302,4 @@ class GameMenu {
     }
 }
 
-export { GameMenu }
+export { MenuContainer }

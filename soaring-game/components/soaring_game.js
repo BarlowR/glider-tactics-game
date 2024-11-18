@@ -2,7 +2,7 @@ import { World, createDirectionalLight } from "./world.js"
 import { create_terrain_mesh } from "./terrain_tools.js"
 import { FlightInstrument } from "./flight_instrument.js"
 import { Glider } from "./glider.js"
-import { GameMenu } from "./menu.js"
+import { MenuContainer } from "./menu.js"
 
 
 const camera_x_offset = 10;
@@ -61,7 +61,7 @@ class SoaringGame {
         this.reset = false;
         
         // Create the Menu system
-        this.menu = new GameMenu (this.game_window_div, dim_x, dim_y);
+        this.menu = new MenuContainer (this.game_window_div, dim_x, dim_y);
         this.menu.set_start(this.start);
         
         // register DOM event functions
