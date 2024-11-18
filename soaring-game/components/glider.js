@@ -71,16 +71,6 @@ class Glider {
         this.move(0);
         this.update_sprite(0)
     }
-
-    reset = () => {
-        this.crashed = false;
-        this.flutter = false;
-        this.stalled = false;
-        this.airspeed = 40;
-        this.position.x= this.starting_position[0]
-        this.position.y= this.starting_position[1]
-        this.position.z= this.starting_position[2]
-    }
     check_latest_action(latest_event, tick, dt) {
         // This is written to put all event handling at intersections on the 1 unit grid. 
         // I will probably need to improve this at some point. 

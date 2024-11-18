@@ -36,63 +36,37 @@ const glide_polar_js3 = {
 }
 const velocity_ne = 260;
 
+const light_position = [-10, 10, 30]
+
 class SoaringGame {
     constructor(dim_x,
         dim_y,
         starting_position,
         height_map,
         thermal_map,
-        light_position = [-10, 10, 30]) {
+        ) {
 
         // Look for window div and set its width 
-        var game_window_div = document.getElementById("game_window");
-        game_window_div.style.width = dim_x + "px";
+        this.game_window_div = document.getElementById("game_window");
+        this.game_window_div.style.width = dim_x + "px";
+
+        this.dim_x = dim_x;
+        this.dim_y = dim_y;
 
         // Setup member variables
         this.height_map = height_map;
         this.thermal_map = thermal_map;
         this.starting_position = starting_position;
         this.world_start_time = new Date().getTime();
-        this.end_time = new Date().getTime();
-        this.started = false;
-        this.latest_event = "";
         this.reset = false;
-
-        // Create the "world"
-        this.world = new World(game_window_div,
-            dim_x,
-            dim_y,
-            camera_x_offset,
-            camera_y_offset);
         
-        // Set initial camera position
-        this.world.camera.position.x = this.starting_position[0] - camera_x_offset;
-        this.world.camera.position.y = this.starting_position[1] - camera_y_offset;
-        this.world.camera.position.z = this.starting_position[2] + camera_z_offset;
-        
-        // Create flight instrument
-        this.flight_instrument = new FlightInstrument(game_window_div, dim_x);
-
-        this.menu = new GameMenu (game_window_div, dim_x, dim_y);
+        // Create the Menu system
+        this.menu = new GameMenu (this.game_window_div, dim_x, dim_y);
         this.menu.set_start(this.start);
-
-        // Create the glider object
-        this.user_glider = new Glider(this.starting_position, glide_polar_js3, velocity_ne, height_scaling_factor);
-
-        // Add a light to the world
-        this.light = createDirectionalLight(light_position);
-
-        // Add glider and light to world scene
-        this.world.scene.add(this.light, this.user_glider.mesh, this.user_glider.line);
-
-        // Create the terrain. (This adds the mesh to the scene so no need to add it to the scene)
-        this.set_terrain_mesh(height_map, thermal_map, height_scaling_factor);
-
+        
         // register DOM event functions
+        this.latest_event = "";
         this.register_event_functions();
-
-        // register world tick functions
-        this.register_tick_functions();
     }
 
     set_terrain_mesh = (height_map, thermal_map, scaling_factor) => {
@@ -145,8 +119,7 @@ class SoaringGame {
         else if (this.user_glider.flutter) { end.innerText = "Fluttered....\n"; }
         else if (this.user_glider.stalled) { end.innerText = "Stalled....\n"; }
         else { end.innerText = "Time's Up \n"; }
-        const x_dist = Math.abs(this.starting_position[0] - this.user_glider.position.x);
-        const y_dist = Math.abs(this.starting_position[1] - this.user_glider.position.y);
+
         end.innerText += "Distance Flow: " + (x_dist + y_dist).toFixed();
     }
 
@@ -154,27 +127,32 @@ class SoaringGame {
         const elapsed_millis = new Date().getTime() - this.world_start_time;
         const elapsed_s = elapsed_millis / 1000;
 
-        if (this.user_glider.crashed || this.user_glider.flutter || this.user_glider.stalled || (elapsed_s > 120)) {
+        if (this.user_glider.crashed || this.user_glider.flutter || this.user_glider.stalled || (elapsed_s > 10) || this.reset) {
+            console.log("End criteria met");
             this.world.stop();
-            var crash_text;
+            var end_text;
             if (this.user_glider.crashed){
-                crash_text = "Crashed"
+                end_text = "Crashed..."
             } else if (this.user_glider.flutter){
-                crash_text = "Fluttered"
+                end_text = "Fluttered..."
             } else if (this.user_glider.stalled){
-                crash_text = "Staled"
+                end_text = "Staled..."
+            } else if (this.reset){
+                end_text = "Reset"
+                this.reset = false;
+            } else if (elapsed_s > 10) {
+                end_text = "Great Job"
             }
-            this.menu.crashed(crash_text);
+            const score = this.score();
+            this.menu.crashed(score, end_text, this.clear);
         }
     }
 
-    reset_glider_and_camera = (reset_position) => {
-        if (this.reset) {
-            this.user_glider.reset()
-            this.world.stop();
-            this.started = false;
-            this.reset = false;
-        }
+    score = () => {
+        const x_dist = Math.abs(this.starting_position[0] - this.user_glider.position.x);
+        const y_dist = Math.abs(this.starting_position[1] - this.user_glider.position.y);
+        const score = (x_dist + y_dist);
+        return score;
     }
 
     update_countdown_timer = () =>{
@@ -230,11 +208,48 @@ class SoaringGame {
 
     start = () => {
         this.world_start_time = new Date().getTime();
-        this.started = true
+
+        // Create the "world"
+        this.world = new World(this.game_window_div,
+            this.dim_x,
+            this.dim_y,
+            camera_x_offset,
+            camera_y_offset);
+        
+        // Set initial camera position
+        this.world.camera.position.x = this.starting_position[0] - camera_x_offset;
+        this.world.camera.position.y = this.starting_position[1] - camera_y_offset;
+        this.world.camera.position.z = this.starting_position[2] + camera_z_offset;
+        
+        // Create flight instrument
+        this.flight_instrument = new FlightInstrument(this.game_window_div, this.dim_x);
+
+        // Create the glider object
+        this.user_glider = new Glider(this.starting_position, glide_polar_js3, velocity_ne, height_scaling_factor);
+
+        // Add a light to the world
+        this.light = createDirectionalLight(light_position);
+
+        // Add glider and light to world scene
+        this.world.scene.add(this.light, this.user_glider.mesh, this.user_glider.line);
+
+        // Create the terrain. (This adds the mesh to the scene so no need to add it to the scene)
+        this.set_terrain_mesh(this.height_map, this.thermal_map, height_scaling_factor);
+
+        // register world tick functions
+        this.register_tick_functions();
+
+        // Start the world
         this.world.start();
     }
     stop = () => {
         this.world.stop();
+    }
+    clear = () => {
+        const game_canvas = document.getElementById("game_canvas");
+        const flight_instrument = document.getElementById("flight_instrument");
+        game_canvas?.remove();
+        flight_instrument?.remove();
     }
     remove_tick_function = (name) => {
         this.world.remove_tick_function(name)

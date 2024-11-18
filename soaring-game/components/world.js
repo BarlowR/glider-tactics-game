@@ -8,7 +8,12 @@ class World {
         this.tick_functions = {};
         this.renderer = createRenderer(dim_x, dim_y);
         this.renderer.domElement.id = "game_canvas";
-        container.appendChild(this.renderer.domElement);
+        const menu_canvas = document.getElementById("menu");
+        if (menu_canvas){
+            container.insertBefore(this.renderer.domElement, menu_canvas);
+        } else {
+            container.appendChild(this.renderer.domElement);
+        }
         this.renderer.setAnimationLoop(this.animate);
         this.last_tick_millis = new Date().getTime();
     }

@@ -3,6 +3,22 @@ const default_text_color = "#140c0c"
 const inaccessible_text_color = "#948c8c"
 const standard_radius = 400/6;
 
+const instruction_text = `Controls: 
+Arrow keys for direction
+Q/A to speed up/slow down
+R to reset
+
+Scoring: 
+Straight line distance from starting position. 
+Timed to 2 mins
+(More modes coming soon...)
+
+Advice: 
+Thermals are generally found at the
+apex of mountains or where steep 
+terrain drops to shallow.
+Go fast to go far.`
+
 class CanvasDomElement {
     constructor(context, width, height, element_width, element_height){
         this.context = context;
@@ -74,20 +90,21 @@ class Menu {
         this.canvas_element.context.fill();
         this.draw_logo();
     }
-    draw_logo = (center_x = 180, center_y = 60) => {
-        const width =  300;
-        const height = 60;
+    draw_logo = (center_x = 150, center_y = 60) => {
+        const width =  200;
+        const height = 40;
         this.canvas_element.context.strokeStyle = default_text_color;
-        this.canvas_element.context.lineWidth = 4;
+        this.canvas_element.context.lineWidth = 2;
         this.canvas_element.context.beginPath();
         this.canvas_element.context.roundRect(center_x - width/2, center_y - height/2, width, height, standard_radius);
         this.canvas_element.context.stroke();
         this.canvas_element.context.fillStyle = default_text_color;
         this.canvas_element.context.textAlign = "center";
         this.canvas_element.context.textBaseline = "middle";
-        this.canvas_element.context.font = 30 + "px Courier New";
+        this.canvas_element.context.font = 22 + "px Courier New";
         this.canvas_element.context.fillText("Micro Soaring", center_x, center_y);
-
+        this.canvas_element.context.font = 15 + "px Courier New";
+        this.canvas_element.context.fillText("Rob Barlow", center_x - 40, center_y + 40);
     }
     register_button = (button) => {
         this.buttons[button.name] = button;
@@ -140,13 +157,19 @@ class MainMenu extends Menu {
                                       this.canvas_element.context, "lobby", () => {
             return
         })
-        const settings_menu = new Button(500, 400, 340, 80, "Settings", 
+        const instructions_menu = new Button(500, 400, 340, 80, "Instructions", 
+                                      NaN, default_text_color, 
+                                      this.canvas_element.context, "instructions", () => {
+            menu_context.change_state(new InstructionsMenu(this.canvas_element))
+        })
+        const settings_menu = new Button(500, 500, 340, 80, "Settings", 
                                       NaN, default_text_color,  
                                       this.canvas_element.context, "settings", () => {
             menu_context.change_state(new SettingsMenu(this.canvas_element))
         })
         this.register_button(single_player_menu);
         this.register_button(lobby_menu);
+        this.register_button(instructions_menu);
         this.register_button(settings_menu);
     }
 }
@@ -160,21 +183,28 @@ class SettingsMenu extends Menu {
         this.register_button(main_menu_button);
     }
 }
-
-class CrashedMenu extends Menu {
-    constructor(canvas_element, text) {
+class EndMenu extends Menu {
+    constructor(canvas_element, score, text, clear_function) {
         super(canvas_element)
-        this.crash_text = text;
+        this.score = score;
+        this.end_text = text;
+        this.clear_function = clear_function;
     }
     build_menu = (menu_context, background_color) =>{
         this.canvas_element.context.clearRect(0, 0, this.canvas_element.width, this.canvas_element.height);
-        const crashed_button = new Button(500, 300, 340, 80, this.crash_text, default_text_color, "#ffffff", this.canvas_element.context, "crash", () => {
+        console.log(this.score)
+        const score_string = "Score: " + this.score.toFixed(0)
+        const score_button = new Button(500, 200, 340, 80, score_string, default_text_color, "#ffffff", this.canvas_element.context, "crash", () => {
+        })
+        const crashed_button = new Button(500, 300, 340, 80, this.end_text, default_text_color, "#ffffff", this.canvas_element.context, "crash", () => {
         })
         const main_menu_button = new Button(500, 400, 340, 80, "Main Menu", default_text_color, "#ffffff", this.canvas_element.context, "main_menu", () => {
+            this.clear_function();
             menu_context.change_state(new MainMenu(this.canvas_element))
         })
         this.register_button(main_menu_button);
         this.register_button(crashed_button);
+        this.register_button(score_button);
     }
 }
 
@@ -182,7 +212,7 @@ class SinglePlayerMenu extends Menu {
     build_menu = (menu_context, background_color) =>{
         this.fill_background(background_color);
         const start_button = new Button(500, 200, 340, 80, 
-                                        "Start", NaN, default_text_color, this.canvas_element.context, "rob", () => {
+                                        "Start", NaN, default_text_color, this.canvas_element.context, "start", () => {
             menu_context.change_state(new HiddenMenu(this.canvas_element))
             menu_context.start();
         })
@@ -194,9 +224,34 @@ class SinglePlayerMenu extends Menu {
     }
 }
 
+class InstructionsMenu extends Menu {
+    build_menu = (menu_context, background_color) =>{
+        this.fill_background(background_color);
+        this.draw_instructions_text();
+        const main_menu_button = new Button(500, 500, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
+            menu_context.change_state(new MainMenu(this.canvas_element))
+        })
+        this.register_button(main_menu_button);
+    }
+    draw_instructions_text = () => {
+        this.canvas_element.context.fillStyle = default_text_color;
+        this.canvas_element.context.textAlign = "center";
+        this.canvas_element.context.textBaseline = "middle";
+        this.canvas_element.context.font = 20 + "px Courier New";
+
+        var y_index = 100;
+
+        for (const line of instruction_text.split("\n")){
+            this.canvas_element.context.fillText(line, 500, y_index);
+            y_index += 20;
+        }
+    }
+}
+
 class HiddenMenu extends Menu {
     build_menu = (menu_context, background_color) => {
         this.canvas_element.context.clearRect(0, 0, this.canvas_element.width, this.canvas_element.height);
+        this.draw_logo();
     }
 }
 
@@ -244,8 +299,9 @@ class GameMenu {
     set_start(start){
         this.start = start;
     }
-    crashed = (text) => {
-        this.change_state(new CrashedMenu(this.dom_element, text))
+
+    crashed = (score, text, clear_function) => {
+        this.change_state(new EndMenu(this.dom_element, score, text, clear_function))
     }
 }
 
