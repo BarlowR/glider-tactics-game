@@ -127,7 +127,7 @@ class SoaringGame {
         const elapsed_millis = new Date().getTime() - this.world_start_time;
         const elapsed_s = elapsed_millis / 1000;
 
-        if (this.user_glider.crashed || this.user_glider.flutter || this.user_glider.stalled || (elapsed_s > 10) || this.reset) {
+        if (this.user_glider.crashed || this.user_glider.flutter || this.user_glider.stalled || (elapsed_s > 120) || this.reset) {
             console.log("End criteria met");
             this.world.stop();
             var end_text;
@@ -140,7 +140,7 @@ class SoaringGame {
             } else if (this.reset){
                 end_text = "Reset"
                 this.reset = false;
-            } else if (elapsed_s > 10) {
+            } else if (elapsed_s > 120) {
                 end_text = "Great Job"
             }
             const score = this.score();
