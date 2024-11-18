@@ -3,6 +3,7 @@ import generate_terrain
 import time
 import os
 import argparse
+import json
 
 def generate_map(dim_x, dim_y, map_type):
     print(f"Beginning Generation")
@@ -31,29 +32,20 @@ def generate_map(dim_x, dim_y, map_type):
     return(map_layer, thermals)
     
 
-def save_map_file(hm, tm, file):
-    with open(file, "w") as f:
-        f.write("const heightmap_const = [")
-        for row in hm:
-            f.write("[")
-            for element in row: 
-                f.write(f"{element},")
-            f.write("],\n")
-        f.write("]\n")
-        f.write("const thermalmap_const = [")
-        for row in tm:
-            f.write("[")
-            for element in row: 
-                f.write(f"{element},")
-            f.write("],\n")
-        f.write("]\n")
-        f.write("export { heightmap_const, thermalmap_const };")
+def save_map_file(hm, tm, folder):
+    if (not os.path.isdir(folder)):
+        os.mkdir(folder)
+
+    with open(os.path.join(folder, "height_map.json"), "w") as f:
+        json.dump(hm.tolist(), f)
+
+    with open(os.path.join(folder, "thermal_map.json"), "w") as f:
+        json.dump(tm, f)
 
 
-def build_js_map_file(map_type, dim_x, dim_y, folder):
+def build_json_map_file(map_type, dim_x, dim_y, folder):
     map_layer, thermals = generate_map(dim_x, dim_y, map_type)
-    save_map_file(map_layer, thermals.thermal_map, os.path.join(folder, f"{map_type}.js"))
-
+    save_map_file(map_layer, thermals.thermal_map, folder)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -62,4 +54,4 @@ if __name__ == "__main__":
     parser.add_argument("--map_type", default="big_ranges")
 
     args = parser.parse_args()
-    build_js_map_file(args.map_type, args.dim_x, args.dim_y, "soaring-game/components")
+    build_json_map_file(args.map_type, args.dim_x, args.dim_y, os.path.join("soaring-game/public/assets/maps", args.map_type))

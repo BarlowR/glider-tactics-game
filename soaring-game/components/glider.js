@@ -1,33 +1,38 @@
 import * as THREE from 'three';
-import { distance } from 'three/webgpu';
 
 const k_rotation_ticks = 20
 const k_horizontal_unit_length = 2500 //m
 const k_vertical_unit_length = 1000 //m
 const k_time_scaling = 100 //m
 
-class Glider {
-    constructor(starting_position = [40, 40, 3], glide_polar, velocity_ne, height_scaling_factor) {
+class GliderModel {
+    constructor(model_name, polar, sprite_folder){
+        this.model_name = model_name;
+        this.polar = polar;
+        console.log(sprite_folder)
         this.sprite_materials = [
-            new THREE.TextureLoader().load('assets/toyplane/up.png'),
-            new THREE.TextureLoader().load('assets/toyplane/right.png'),
-            new THREE.TextureLoader().load('assets/toyplane/down.png'),
-            new THREE.TextureLoader().load('assets/toyplane/left.png'),
-            new THREE.TextureLoader().load('assets/toyplane/up_bank.png'),
-            new THREE.TextureLoader().load('assets/toyplane/left_bank.png'),
-            new THREE.TextureLoader().load('assets/toyplane/down_bank.png'),
-            new THREE.TextureLoader().load('assets/toyplane/right_bank.png'),
-
+            new THREE.TextureLoader().load(sprite_folder + 'up.png'),
+            new THREE.TextureLoader().load(sprite_folder + 'right.png'),
+            new THREE.TextureLoader().load(sprite_folder + 'down.png'),
+            new THREE.TextureLoader().load(sprite_folder + 'left.png'),
+            new THREE.TextureLoader().load(sprite_folder + 'up_bank.png'),
+            new THREE.TextureLoader().load(sprite_folder + 'left_bank.png'),
+            new THREE.TextureLoader().load(sprite_folder + 'down_bank.png'),
+            new THREE.TextureLoader().load(sprite_folder + 'right_bank.png'),
         ]
-
-        this.glide_polar = glide_polar;
-        this.height_scaling_factor = height_scaling_factor;
-
         for (var tex in this.sprite_materials) {
             this.sprite_materials[tex].minFilter = THREE.NearestFilter;
             this.sprite_materials[tex].magFilter = THREE.NearestFilter;
         }
-        const material = new THREE.SpriteMaterial({ map: this.sprite_materials["top"] });
+    } 
+}
+
+class Glider {
+    constructor(starting_position, glider_model, velocity_ne, height_scaling_factor) {
+        this.glider_model = glider_model
+        this.height_scaling_factor = height_scaling_factor;
+
+        const material = new THREE.SpriteMaterial({ map: this.glider_model.sprite_materials[0] });
 
         this.mesh = new THREE.Sprite(material);
         this.mesh.position.set(0, 0, -5);
@@ -125,8 +130,8 @@ class Glider {
             polar_index = 250;
         }
         var sink_rate = -3;
-        if (polar_index in this.glide_polar){
-            sink_rate = this.glide_polar[polar_index];
+        if (polar_index in this.glider_model.polar){
+            sink_rate = this.glider_model.polar[polar_index];
         }
         this.velocity.z = lift_index > 0 ? lift : 0;
         this.velocity.z += sink_rate;
@@ -170,22 +175,22 @@ class Glider {
         if (this.thermalling) {
             var circle = (Math.floor(tick / k_rotation_ticks) % 4);
             if (circle == 0) {
-                this.mesh.material.map = this.sprite_materials[4];
+                this.mesh.material.map = this.glider_model.sprite_materials[4];
             } else if (circle == 1) {
-                this.mesh.material.map = this.sprite_materials[5];
+                this.mesh.material.map = this.glider_model.sprite_materials[5];
             } else if (circle == 2) {
-                this.mesh.material.map = this.sprite_materials[6];
+                this.mesh.material.map = this.glider_model.sprite_materials[6];
             } else if (circle == 3) {
-                this.mesh.material.map = this.sprite_materials[7];
+                this.mesh.material.map = this.glider_model.sprite_materials[7];
             }
         } else if (this.direction == 0) {
-            this.mesh.material.map = this.sprite_materials[0];
+            this.mesh.material.map = this.glider_model.sprite_materials[0];
         } else if (this.direction == Math.PI/2) {
-            this.mesh.material.map = this.sprite_materials[1];
+            this.mesh.material.map = this.glider_model.sprite_materials[1];
         } else if (this.direction == Math.PI) {
-            this.mesh.material.map = this.sprite_materials[2];
+            this.mesh.material.map = this.glider_model.sprite_materials[2];
         } else if (this.direction == 3 * Math.PI/2) {
-            this.mesh.material.map = this.sprite_materials[3];
+            this.mesh.material.map = this.glider_model.sprite_materials[3];
         }
     }
     update(tick, dt, latest_event, height_map, thermal_map) {
@@ -197,4 +202,4 @@ class Glider {
     }
 }
 
-export { Glider };
+export {GliderModel, Glider };

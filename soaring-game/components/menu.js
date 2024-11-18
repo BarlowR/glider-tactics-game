@@ -74,13 +74,28 @@ class Button {
         return false;
     }
 }
+
+
+function draw_text_lines (context, text, center_x, start_y) {
+    context.fillStyle = default_text_color;
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.font = 20 + "px Courier New";
+
+    var y_index = start_y;
+    for (const line of text.split("\n")){
+        context.fillText(line, center_x, y_index);
+        y_index += 20;
+    }
+}
+
 class Menu {
     constructor(canvas_element) {
         this.canvas_element = canvas_element;
         this.buttons = {};
     }
     build_menu = (menu_context) => {
-        throw new Error("Base Class");
+        throw new Error("Base Class, use one of the derived class");
     }
     fill_background = (color) => {
         this.canvas_element.context.fillStyle = color;
@@ -174,9 +189,19 @@ class MainMenu extends Menu {
 class SettingsMenu extends Menu {
     build_menu = (menu_context, background_color) =>{
         this.fill_background(background_color);
+        const set_big_terrain = new Button(500, 200, 340, 80, "Use Big Terrain", NaN, default_text_color, this.canvas_element.context, "big_terrain", () => {
+            console.log("pressed")
+            menu_context.settings.load_map("./assets/maps/big_ranges", "Big Mountains")
+        })
+        const set_little_terrain = new Button(500, 300, 340, 80, "Use Little Terrain", NaN, default_text_color, this.canvas_element.context, "little_terrain", () => {
+            console.log("pressed")
+            menu_context.settings.load_map("./assets/maps/little_ranges", "Little Mountains")
+        });
         const main_menu_button = new Button(500, 400, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
             menu_context.change_state(new MainMenu(this.canvas_element))
         })
+        this.register_button(set_big_terrain);
+        this.register_button(set_little_terrain);
         this.register_button(main_menu_button);
     }
 }
@@ -193,9 +218,9 @@ class EndMenu extends Menu {
         const score_string = "Score: " + this.score.toFixed(0)
         const score_button = new Button(500, 200, 340, 80, score_string, default_text_color, "#ffffff", this.canvas_element.context, "crash", () => {
         })
-        const crashed_button = new Button(500, 300, 340, 80, this.end_text, default_text_color, "#ffffff", this.canvas_element.context, "crash", () => {
+        const crashed_button = new Button(500, 300, 800, 80, this.end_text, default_text_color, "#ffffff", this.canvas_element.context, "crash", () => {
         })
-        const main_menu_button = new Button(500, 400, 340, 80, "Main Menu", default_text_color, "#ffffff", this.canvas_element.context, "main_menu", () => {
+        const main_menu_button = new Button(500, 400, 340, 80, "Main Menu", inaccessible_text_color, "#ffffff", this.canvas_element.context, "main_menu", () => {
             this.clear_function();
             menu_context.change_state(new MainMenu(this.canvas_element))
         })
@@ -208,10 +233,22 @@ class EndMenu extends Menu {
 class SinglePlayerMenu extends Menu {
     build_menu = (menu_context, background_color) =>{
         this.fill_background(background_color);
+        var setup_text = "Glider: " + menu_context.settings.glider_model.model_name + "\n"
+        setup_text += "Terrain: " + menu_context.settings.terrain.name + "\n"
+        setup_text += "(Change these in the Settings Menu)"
+        
+        draw_text_lines(this.canvas_element.context, setup_text, 500, 100);
+
+        const loading_button = new Button(500, 400, 1000, 80, 
+                                        "Still loading maps, try again in a moment or two", NaN, inaccessible_text_color, this.canvas_element.context, "start", () => {               
+        })
         const start_button = new Button(500, 200, 340, 80, 
                                         "Start", NaN, default_text_color, this.canvas_element.context, "start", () => {
-            menu_context.change_state(new HiddenMenu(this.canvas_element))
-            menu_context.start();
+            if (menu_context.start()){
+                menu_context.change_state(new HiddenMenu(this.canvas_element))
+            } else {
+                this.register_button(loading_button)
+            }               
         })
         const main_menu_button = new Button(500, 300, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
             menu_context.change_state(new MainMenu(this.canvas_element))
@@ -224,24 +261,11 @@ class SinglePlayerMenu extends Menu {
 class InstructionsMenu extends Menu {
     build_menu = (menu_context, background_color) =>{
         this.fill_background(background_color);
-        this.draw_instructions_text();
+        draw_text_lines(this.canvas_element.context, instruction_text, 500, 100);
         const main_menu_button = new Button(500, 500, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
             menu_context.change_state(new MainMenu(this.canvas_element))
         })
         this.register_button(main_menu_button);
-    }
-    draw_instructions_text = () => {
-        this.canvas_element.context.fillStyle = default_text_color;
-        this.canvas_element.context.textAlign = "center";
-        this.canvas_element.context.textBaseline = "middle";
-        this.canvas_element.context.font = 20 + "px Courier New";
-
-        var y_index = 100;
-
-        for (const line of instruction_text.split("\n")){
-            this.canvas_element.context.fillText(line, 500, y_index);
-            y_index += 20;
-        }
     }
 }
 
@@ -256,6 +280,7 @@ class MenuContainer {
     constructor(dom_parent,
         width,
         height,
+        settings,
         base_color = "#000000",
         highlight_color = "#e1d9d9",
         highlight_color_2 = "#ffffff",
@@ -269,6 +294,8 @@ class MenuContainer {
         this.canvas_pixel_width = width;
         this.canvas_pixel_height = height;
         
+        this.settings = settings
+
         fi_canvas.style.width = width + "px";
         fi_canvas.style.height = height + "px";
         fi_canvas.style.position = "absolute"
@@ -284,7 +311,6 @@ class MenuContainer {
         
         this.state = new MainMenu(this.dom_element, this.panel_color);
         this.state.build_menu(this, this.panel_color);
-        this.start;
     }
     onclick = (e) => {
         this.state.onclick(e);
