@@ -41,7 +41,6 @@ const light_position = [-10, 10, 30]
 class SoaringGame {
     constructor(dim_x,
         dim_y,
-        starting_position,
         height_map,
         thermal_map,
         ) {
@@ -56,7 +55,7 @@ class SoaringGame {
         // Setup member variables
         this.height_map = height_map;
         this.thermal_map = thermal_map;
-        this.starting_position = starting_position;
+        this.starting_position = [dim_x/2, dim_y/2, 3];
         this.world_start_time = new Date().getTime();
         this.reset = false;
         
@@ -208,6 +207,9 @@ class SoaringGame {
 
     start = () => {
         this.world_start_time = new Date().getTime();
+
+        this.starting_position[0] = this.dim_x/2 + (this.dim_x/4 * (Math.random()-0.5));
+        this.starting_position[1] = this.dim_y/2 + (this.dim_x/4 * (Math.random()-0.5));
 
         // Create the "world"
         this.world = new World(this.game_window_div,

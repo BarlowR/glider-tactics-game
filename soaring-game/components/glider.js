@@ -7,7 +7,7 @@ const k_vertical_unit_length = 1000 //m
 const k_time_scaling = 100 //m
 
 class Glider {
-    constructor(starting_position = [40, 40, 3], glide_polar, velocity_ne, height_scaling_factor, max_thermal = 7) {
+    constructor(starting_position = [40, 40, 3], glide_polar, velocity_ne, height_scaling_factor) {
         this.sprite_materials = [
             new THREE.TextureLoader().load('assets/toyplane/up.png'),
             new THREE.TextureLoader().load('assets/toyplane/right.png'),
@@ -22,7 +22,6 @@ class Glider {
 
         this.glide_polar = glide_polar;
         this.height_scaling_factor = height_scaling_factor;
-        this.max_thermal = max_thermal;
 
         for (var tex in this.sprite_materials) {
             this.sprite_materials[tex].minFilter = THREE.NearestFilter;
@@ -117,7 +116,7 @@ class Glider {
             (1 - (this.position.z * this.position.z * this.position.z) / (inversion * inversion * inversion)) :
             0;
 
-        const lift = lift_index * agl_index * inversion_index * this.max_thermal;
+        const lift = lift_index * agl_index * inversion_index;
         
         var polar_index = 80
         if (this.airspeed * 3.6 > 80){
