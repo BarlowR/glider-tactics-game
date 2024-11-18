@@ -2,7 +2,7 @@ import { World, createDirectionalLight } from "./world.js"
 import { create_terrain_mesh } from "./terrain_tools.js"
 import { FlightInstrument } from "./flight_instrument.js"
 import { Glider } from "./glider.js"
-import { Menu } from "./menu.js"
+import { GameMenu } from "./menu.js"
 
 
 const camera_x_offset = 10;
@@ -73,7 +73,8 @@ class SoaringGame {
         // Create flight instrument
         this.flight_instrument = new FlightInstrument(game_window_div, dim_x);
 
-        this.menu = new Menu (game_window_div, dim_x, dim_y);
+        this.menu = new GameMenu (game_window_div, dim_x, dim_y);
+        this.menu.set_start(this.start);
 
         // Create the glider object
         this.user_glider = new Glider(this.starting_position, glide_polar_js3, velocity_ne, height_scaling_factor);
@@ -92,9 +93,6 @@ class SoaringGame {
 
         // register world tick functions
         this.register_tick_functions();
-
-        this.world.render_single_frame()
-        this.start_popup()
     }
 
     set_terrain_mesh = (height_map, thermal_map, scaling_factor) => {
@@ -118,20 +116,6 @@ class SoaringGame {
     register_event_functions = () => {
         // Setup an event queue with a length of one ;) 
         onkeydown = onkeyup = (e) => {
-            if (!this.started && ((new Date().getTime() - this.end_time) > 1000) ){
-                this.start();
-                this.user_glider.reset()
-                var start = document.getElementById("start_popup")
-                if (start) {
-                    start.style.visibility = "hidden";
-                    return
-                }
-                // var end = document.getElementById("end_popup")
-                // if (end) {
-                //     end.style.visibility = "hidden";
-                //     return
-                // }
-            }
             if (e.type == 'keydown') {
                 this.latest_event = e.key;
             } else if (e.type == 'keyup') {
@@ -142,29 +126,9 @@ class SoaringGame {
                 }
             }
         }
-
         onclick = (e) => {
-            this.menu.onclick(e);
+            this.menu.state.onclick(e);
         }
-    }
-
-    start_popup = () => {
-        var end = document.getElementById("start_popup")
-        if (end) {
-            end.style.visibility = "visible";
-            return
-        }
-        end = document.createElement("div");
-        end.id = "start_popup";
-        document.body.appendChild(end);
-
-        end.style.width = "300px";
-        end.style.height = "100px";
-        end.style.position = 'absolute';
-        end.style.backgroundColor = 'white';
-        end.style.top = '400px';
-        end.style.left = '400px';
-        end.innerText = "Press any key to begin";
     }
 
     end_popup = () => {
@@ -191,9 +155,16 @@ class SoaringGame {
         const elapsed_s = elapsed_millis / 1000;
 
         if (this.user_glider.crashed || this.user_glider.flutter || this.user_glider.stalled || (elapsed_s > 120)) {
-            this.end_popup()
             this.world.stop();
-            this.end_time = new Date().getTime();
+            var crash_text;
+            if (this.user_glider.crashed){
+                crash_text = "Crashed"
+            } else if (this.user_glider.flutter){
+                crash_text = "Fluttered"
+            } else if (this.user_glider.stalled){
+                crash_text = "Staled"
+            }
+            this.menu.crashed(crash_text);
         }
     }
 
@@ -206,9 +177,27 @@ class SoaringGame {
         }
     }
 
+    update_countdown_timer = () =>{
+        return
+    }
+
     register_tick_functions = () => {
+        this.world.register_tick_function((tick, dt) => {
+            const remaining_seconds = Math.round((new Date().getTime() - this.world_start_time) / 1000)
+            if (remaining_seconds < 3){
+                this.begin_flight = false
+                this.update_countdown_timer(remaining_seconds);
+            } else {
+                this.begin_flight = true;
+                this.world.remove_tick_function("countdown_timer");
+                this.world_start_time = new Date().getTime();
+            }
+        }, "countdown_timer");
         // Update glider
         this.world.register_tick_function((tick, dt) => {
+            if (!this.begin_flight){
+                return;
+            }
             this.user_glider.update(tick,
                 dt,
                 this.latest_event,
@@ -217,11 +206,15 @@ class SoaringGame {
         }, "glider_update");
         // Update flight instrument from glider position
         this.world.register_tick_function((tick, dt) => {
+            var start_time = this.world_start_time;
+            if (!this.begin_flight){
+                start_time = new Date().getTime();
+            }
             this.flight_instrument.update_instrument(this.user_glider.velocity.z,
                 this.user_glider.position.z,
                 this.user_glider.agl, 
                 this.user_glider.airspeed, 
-                (this.world_start_time + 120000) - new Date().getTime() )
+                (start_time + 120000) - new Date().getTime() )
         }, "update_instrument");
 
         // Move the camera to follow the glider positon
@@ -233,10 +226,6 @@ class SoaringGame {
         this.world.register_tick_function((tick, dt) => {
             this.check_end_criteria();
         }, "check_end_criteria");
-
-        this.world.register_tick_function((tick, dt) => {
-            this.reset_glider_and_camera(this.starting_position);
-        }, "reset_glider");
     }
 
     start = () => {

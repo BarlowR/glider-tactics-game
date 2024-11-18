@@ -52,6 +52,7 @@ class Glider {
             y: starting_position[1],
             z: starting_position[2]
         };
+        this.agl = this.starting_position[2]
         this.crashed = false;
         this.flutter = false;
         this.stalled = false;
