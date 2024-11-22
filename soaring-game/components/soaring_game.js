@@ -1,9 +1,9 @@
 import { World, createDirectionalLight } from "./world.js"
-import { create_terrain_mesh } from "./terrain_tools.js"
 import { FlightInstrument } from "./flight_instrument.js"
 import { GliderModel, Glider } from "./glider.js"
 import { MenuContainer } from "./menu.js"
 import { SettingsManager } from "./settings.js"
+import { WorldMap } from "./world_map.js"
 
 const velocity_ne = 260;
 
@@ -38,12 +38,6 @@ class SoaringGame {
 
         // load the map
         this.settings.load_map("./assets/maps/little_ranges", "Big Mountains")
-    }
-
-    set_terrain_mesh = (height_map, scaling_factor) => {
-        var terrain = create_terrain_mesh(height_map, scaling_factor);
-        terrain.name = "terrain_mesh";
-        this.world.scene.add(terrain);
     }
     remove_terrain_mesh = () => {
         const terrain_object = this.world.scene.getObjectByName("terrain_mesh");
@@ -158,7 +152,7 @@ class SoaringGame {
     }
 
     start = () => {
-        if (!(this.settings.terrain.loaded_thermal_map && this.settings.terrain.loaded_height_map)) {
+        if (!(this.settings.terrain.loaded_thermal_map && this.settings.terrain.loaded_height_map && this.settings.terrain.mesh_created)) {
             return false
         }
         this.world_start_time = new Date().getTime();
@@ -189,11 +183,8 @@ class SoaringGame {
         // Add a light to the world
         this.light = createDirectionalLight(this.settings.light_position);
 
-        // Add glider and light to world scene
-        this.world.scene.add(this.light, this.user_glider.mesh, this.user_glider.line);
-
-        // Create the terrain. (This adds the mesh to the scene so no need to add it to the scene)
-        this.set_terrain_mesh(this.settings.terrain.height_map, this.settings.height_scaling_factor);
+        // Add everything to the scene
+        this.world.scene.add(this.light, this.user_glider.mesh, this.user_glider.line, this.settings.terrain.mesh)
 
         // register world tick functions
         this.register_tick_functions();

@@ -105,4 +105,4 @@ function create_terrain_mesh(height_map, height_scaling_factor, color_map = fals
     return mesh;
 }
 
-export { create_terrain_mesh };
+export { create_terrain_mesh, height_map_to_color_map };
