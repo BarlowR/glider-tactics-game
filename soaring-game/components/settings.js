@@ -1,39 +1,17 @@
-import { GliderModel } from "./glider.js"
-
-const glide_polar_js3 = {
-    80: -0.7,
-    90: -0.67,
-    100: -0.65,
-    110: -0.65,
-    120: -0.67,
-    130: -0.70,
-    140: -0.75,
-    150: -0.82,
-    160: -0.95,
-    170: -1.07,
-    180: -1.2,
-    190: -1.34,
-    200: -1.5,
-    210: -1.7,
-    220: -1.93,
-    230: -2.2,
-    240: -2.5,
-    250: -2.85,
-    260: -3.4
-}
-
+import { JS3 } from "./glider_models/js3"
 class SettingsManager {
     constructor() {
         if (SettingsManager._instance) {
-            throw new Error("SettingManager should be a singleton and shouldn't be instantiated more than once.")
+            throw new Error("SettingManager shouldn't be instantiated more than once.")
         }
         SettingsManager._instance = this;
         this.glider_model;
-        this.terrain = {name : "",
-                        height_map : [[]],
-                        loaded_height_map : false,
-                        thermal_map : [[]],
-                        loaded_thermal_map : false,
+        this.terrain = {
+            name: "",
+            height_map: [[]],
+            loaded_height_map: false,
+            thermal_map: [[]],
+            loaded_thermal_map: false,
         };
         this.height_scaling_factor = 1.5;
         this.light_position = [-10, 10, 30];
@@ -41,21 +19,22 @@ class SettingsManager {
         this.camera_y_offset = 10;
         this.camera_z_offset = 10;
         this.camera_spring_constant = 0.05;
-
+        this.glider_color_options = ["#fe0101", "#2982ff", "#a8ff94", "#7f00ad"];
+        this.glider_color = this.glider_color_options[0];
     }
-    set_glider_model = (model_name) =>{
-        if (model_name == "JS3"){
-            this.glider_model = new GliderModel("JS3", glide_polar_js3, "./assets/toyplane/");
+    set_glider_model = (model_name) => {
+        if (model_name == "JS3") {
+            this.glider_model = JS3
         } else {
             throw new Error("Unknown glider model");
         }
     }
-    set_height_map = (height_map) =>{
-        this.terrain.height_map = height_map 
+    set_height_map = (height_map) => {
+        this.terrain.height_map = height_map
         this.terrain.loaded_height_map = true;
     }
-    set_thermal_map = (thermal_map) =>{
-        this.terrain.thermal_map = thermal_map 
+    set_thermal_map = (thermal_map) => {
+        this.terrain.thermal_map = thermal_map
         this.terrain.loaded_thermal_map = true;
     }
     load_map = (folder, name) => {
@@ -73,7 +52,6 @@ class SettingsManager {
                 console.log("Loaded Thermal Map from " + folder);
             });
     }
-  }
+}
 
-
-  export {SettingsManager}
+export { SettingsManager }

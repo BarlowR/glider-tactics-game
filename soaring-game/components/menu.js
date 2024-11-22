@@ -29,7 +29,7 @@ class CanvasDomElement {
     }
 }
 class Button {
-    constructor (center_x, center_y, width, height, text, color, text_color, ctx, name, action) {
+    constructor (center_x, center_y, width, height, text, color, text_color, ctx, name, action, outline = false) {
         this.center_x = center_x ;
         this.center_y = center_y ;
         this.width = width ;
@@ -40,6 +40,7 @@ class Button {
         this.name = name ;
         this.action = action ;
         this.ctx = ctx ;
+        this.outline = outline;
     }
     draw_button = () => {
         this.ctx.fillStyle = this.color;
@@ -49,11 +50,13 @@ class Button {
                              this.width, this.height,
                              standard_radius/2);
         // check for NaN
-        if (this.color != this.color){
+        const color_is_nan = (this.color != this.color);
+        if (color_is_nan || this.outline){
             this.ctx.lineWidth = 4;
             this.ctx.strokeStyle = this.text_color;
             this.ctx.stroke();
-        } else {
+        } 
+        if (!color_is_nan){
             this.ctx.fill();
         }
 
@@ -125,7 +128,11 @@ class Menu {
         button.draw_button();
     }
     remove_button = (name) => {
-        delete this.buttons[name];
+        if (this.buttons[name]){
+            delete this.buttons[name];
+            return true;
+        }
+        return false;
     }
     remove_all_buttons = (color) => {
         const button_keys = Object.keys(this.buttons);
@@ -186,25 +193,7 @@ class MainMenu extends Menu {
         this.register_button(settings_menu);
     }
 }
-class SettingsMenu extends Menu {
-    build_menu = (menu_context, background_color) =>{
-        this.fill_background(background_color);
-        const set_big_terrain = new Button(500, 200, 340, 80, "Use Big Terrain", NaN, default_text_color, this.canvas_element.context, "big_terrain", () => {
-            console.log("pressed")
-            menu_context.settings.load_map("./assets/maps/big_ranges", "Big Mountains")
-        })
-        const set_little_terrain = new Button(500, 300, 340, 80, "Use Little Terrain", NaN, default_text_color, this.canvas_element.context, "little_terrain", () => {
-            console.log("pressed")
-            menu_context.settings.load_map("./assets/maps/little_ranges", "Little Mountains")
-        });
-        const main_menu_button = new Button(500, 400, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
-            menu_context.change_state(new MainMenu(this.canvas_element))
-        })
-        this.register_button(set_big_terrain);
-        this.register_button(set_little_terrain);
-        this.register_button(main_menu_button);
-    }
-}
+
 class EndMenu extends Menu {
     constructor(canvas_element, score, text, clear_function) {
         super(canvas_element)
@@ -227,6 +216,63 @@ class EndMenu extends Menu {
         this.register_button(main_menu_button);
         this.register_button(crashed_button);
         this.register_button(score_button);
+    }
+}
+
+
+class SettingsMenu extends Menu {
+    build_menu = (menu_context, background_color) =>{
+        let settings = menu_context.settings
+
+        this.draw_color_buttons(menu_context, background_color)
+    }
+
+    draw_color_buttons = (menu_context, background_color) => {
+        const choose_color_button = new Button(500, 400, 340, 80, "Choose Color:", NaN, inaccessible_text_color, this.canvas_element.context, "choose_color_button", () => {});
+        const main_menu_button = new Button(500, 600, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
+            menu_context.change_state(new MainMenu(this.canvas_element))
+        })
+        this.fill_background(background_color, background_color);
+
+        this.register_button(choose_color_button);
+        this.register_button(main_menu_button);
+        let settings = menu_context.settings;
+        const colors = settings.glider_color_options;
+        for (let color_idx = 0; color_idx < colors.length; color_idx++) {
+            const button_id = "color_" +color_idx;
+            // Remove the buttons if they exist
+            this.remove_button(button_id);
+            const color = colors[color_idx];
+            const is_active_color = (color == settings.glider_color);
+            var button_width = 75;
+            const button_width_w_padding = button_width + 10;
+            const x_width = (colors.length -1) * (button_width_w_padding);
+            const x_offset = 500 - (x_width/2) + (button_width_w_padding * color_idx)
+            var color_button
+            color_button = new Button(x_offset, 500, button_width, button_width, "", color, default_text_color, this.canvas_element.context, button_id, () => {
+                settings.glider_color = color
+                this.draw_color_buttons(menu_context, background_color);
+            }, is_active_color);
+            this.register_button(color_button);
+        }
+        const using_big_terrain = settings.terrain.name == "Big Mountains";
+        console.log(using_big_terrain);
+        const set_big_terrain = new Button( 500, 200, 340, 80, "Big Terrain", 
+                                            (using_big_terrain ? default_text_color : NaN), 
+                                            (using_big_terrain ? inaccessible_text_color : default_text_color),
+                                            this.canvas_element.context, "big_terrain", () => {
+            settings.load_map("./assets/maps/big_ranges", "Big Mountains");
+            this.draw_color_buttons(menu_context, background_color);
+        })
+        const set_little_terrain = new Button(  500, 300, 340, 80, "Little Terrain", 
+                                                (using_big_terrain? NaN : default_text_color), 
+                                                (using_big_terrain ? default_text_color : inaccessible_text_color),
+                                                this.canvas_element.context, "little_terrain", () => {
+            settings.load_map("./assets/maps/little_ranges", "Little Mountains");
+            this.draw_color_buttons(menu_context, background_color);
+        });        
+        this.register_button(set_big_terrain);
+        this.register_button(set_little_terrain);
     }
 }
 
@@ -328,4 +374,4 @@ class MenuContainer {
     }
 }
 
-export { MenuContainer }
+export { MenuContainer, Menu}

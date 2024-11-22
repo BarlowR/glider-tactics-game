@@ -21,23 +21,23 @@ class SoaringGame {
         this.settings = new SettingsManager();
 
         // Setup member variables
-        this.starting_position = [0,0,3];
+        this.starting_position = [0, 0, 3];
         this.world_start_time = new Date().getTime();
         this.reset = false;
 
         // Create the menu system
         this.menu = new MenuContainer(this.game_window_div, dim_x, dim_y, this.settings);
         this.menu.set_start(this.start);
-        
+
         // register DOM event functions
         this.latest_event = "";
         this.register_event_functions();
-        
+
         // Set the glider model
         this.settings.set_glider_model("JS3");
 
         // load the map
-        this.settings.load_map("./assets/maps/little_ranges", "Little Mountains")
+        this.settings.load_map("./assets/maps/little_ranges", "Big Mountains")
     }
 
     set_terrain_mesh = (height_map, scaling_factor) => {
@@ -62,9 +62,9 @@ class SoaringGame {
             if (e.type == 'keydown') {
                 this.latest_event = e.key;
             } else if (e.type == 'keyup') {
-                if (e.key == "r"){
+                if (e.key == "r") {
                     this.reset = true;
-                } else if (e.key == this.latest_event){
+                } else if (e.key == this.latest_event) {
                     this.latest_event = "";
                 }
             }
@@ -72,24 +72,6 @@ class SoaringGame {
         onclick = (e) => {
             this.menu.state.onclick(e);
         }
-    }
-
-    end_popup = () => {
-        const end = document.createElement("div");
-        document.body.appendChild(end);
-
-        end.style.width = "300px";
-        end.style.height = "100px";
-        end.style.position = 'absolute';
-        end.style.backgroundColor = 'white';
-        end.style.top = '400px';
-        end.style.left = '400px';
-        if (this.user_glider.crashed) { end.innerText = "Crashed....\n"; }
-        else if (this.user_glider.flutter) { end.innerText = "Fluttered....\n"; }
-        else if (this.user_glider.stalled) { end.innerText = "Stalled....\n"; }
-        else { end.innerText = "Time's Up \n"; }
-
-        end.innerText += "Distance Flow: " + (x_dist + y_dist).toFixed();
     }
 
     check_end_criteria = () => {
@@ -100,13 +82,13 @@ class SoaringGame {
             console.log("End criteria met");
             this.world.stop();
             var end_text;
-            if (this.user_glider.crashed){
+            if (this.user_glider.crashed) {
                 end_text = "Crashed! Proximity flying is dangerous"
-            } else if (this.user_glider.flutter){
+            } else if (this.user_glider.flutter) {
                 end_text = "Fluttered! Airspeed too high"
-            } else if (this.user_glider.stalled){
+            } else if (this.user_glider.stalled) {
                 end_text = "Staled! Airspeed too low"
-            } else if (this.reset){
+            } else if (this.reset) {
                 end_text = "Pilot Reset (Don't try this in real life)"
                 this.reset = false;
             } else if (elapsed_s > 120) {
@@ -124,14 +106,14 @@ class SoaringGame {
         return score;
     }
 
-    update_countdown_timer = () =>{
+    update_countdown_timer = () => {
         return
     }
 
     register_tick_functions = () => {
         this.world.register_tick_function((tick, dt) => {
             const remaining_seconds = Math.round((new Date().getTime() - this.world_start_time) / 1000)
-            if (remaining_seconds < 3){
+            if (remaining_seconds < 3) {
                 this.begin_flight = false
                 this.update_countdown_timer(remaining_seconds);
             } else {
@@ -142,7 +124,7 @@ class SoaringGame {
         }, "countdown_timer");
         // Update glider
         this.world.register_tick_function((tick, dt) => {
-            if (!this.begin_flight){
+            if (!this.begin_flight) {
                 return;
             }
             this.user_glider.update(tick,
@@ -154,14 +136,14 @@ class SoaringGame {
         // Update flight instrument from glider position
         this.world.register_tick_function((tick, dt) => {
             var start_time = this.world_start_time;
-            if (!this.begin_flight){
+            if (!this.begin_flight) {
                 start_time = new Date().getTime();
             }
             this.flight_instrument.update_instrument(this.user_glider.velocity.z,
                 this.user_glider.position.z,
-                this.user_glider.agl, 
-                this.user_glider.airspeed, 
-                (start_time + 120000) - new Date().getTime() )
+                this.user_glider.agl,
+                this.user_glider.airspeed,
+                (start_time + 120000) - new Date().getTime())
         }, "update_instrument");
 
         // Move the camera to follow the glider positon
@@ -176,13 +158,13 @@ class SoaringGame {
     }
 
     start = () => {
-        if (!(this.settings.terrain.loaded_thermal_map && this.settings.terrain.loaded_height_map)){
+        if (!(this.settings.terrain.loaded_thermal_map && this.settings.terrain.loaded_height_map)) {
             return false
         }
         this.world_start_time = new Date().getTime();
 
-        this.starting_position[0] = this.settings.terrain.height_map.length/2 + (this.settings.terrain.height_map.length/4 * (Math.random()-0.5));
-        this.starting_position[1] = this.settings.terrain.height_map[0].length/2 + (this.settings.terrain.height_map[0].length/4 * (Math.random()-0.5));
+        this.starting_position[0] = this.settings.terrain.height_map.length / 2 + (this.settings.terrain.height_map.length / 4 * (Math.random() - 0.5));
+        this.starting_position[1] = this.settings.terrain.height_map[0].length / 2 + (this.settings.terrain.height_map[0].length / 4 * (Math.random() - 0.5));
 
         console.log(this.starting_position)
 
@@ -192,17 +174,17 @@ class SoaringGame {
             this.dim_y,
             this.settings.camera_x_offset,
             this.settings.camera_y_offset);
-        
+
         // Set initial camera position
         this.world.camera.position.x = this.starting_position[0] - this.settings.camera_x_offset;
         this.world.camera.position.y = this.starting_position[1] - this.settings.camera_y_offset;
         this.world.camera.position.z = this.starting_position[2] + this.settings.camera_z_offset;
-        
+
         // Create flight instrument
         this.flight_instrument = new FlightInstrument(this.game_window_div, this.dim_x);
 
         // Create the glider object
-        this.user_glider = new Glider(this.starting_position, this.settings.glider_model, velocity_ne, this.settings.height_scaling_factor);
+        this.user_glider = new Glider(this.starting_position, this.settings.glider_model, this.settings.glider_color, velocity_ne, this.settings.height_scaling_factor);
 
         // Add a light to the world
         this.light = createDirectionalLight(this.settings.light_position);

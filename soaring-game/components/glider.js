@@ -28,11 +28,12 @@ class GliderModel {
 }
 
 class Glider {
-    constructor(starting_position, glider_model, velocity_ne, height_scaling_factor) {
+    constructor(starting_position, glider_model, color, velocity_ne, height_scaling_factor) {
         this.glider_model = glider_model
         this.height_scaling_factor = height_scaling_factor;
+        this.color = color
 
-        const material = new THREE.SpriteMaterial({ map: this.glider_model.sprite_materials[0] });
+        const material = new THREE.SpriteMaterial({ map: this.glider_model.sprite_materials[0], color : this.color});
 
         this.mesh = new THREE.Sprite(material);
         this.mesh.position.set(0, 0, -5);
