@@ -1,0 +1,1 @@
+body{margin:0}canvas{margin:0;width:100%;height:40vw}#game_window{display:block;margin-left:auto;margin-right:auto;position:relative;margin-top:10px}#game_canvas{position:absolute;left:0;top:0;border-radius:30px}#world_map,#menu{border-radius:30px}
