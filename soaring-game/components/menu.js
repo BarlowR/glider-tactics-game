@@ -6,6 +6,7 @@ const standard_radius = 400/6;
 const instruction_text = `Controls: 
 Arrow keys for direction
 Q/A to speed up/slow down
++/- to zoom map
 R to reset
 
 Scoring: 

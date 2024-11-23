@@ -21,7 +21,9 @@ class SoaringGame {
         this.settings = new SettingsManager();
 
         // Setup member variables
-        this.starting_position = [0, 0, 3];
+        this.starting_position = {x: 0, 
+                                 y: 0, 
+                                 z: 3}
         this.world_start_time = new Date().getTime();
         this.reset = false;
 
@@ -37,7 +39,7 @@ class SoaringGame {
         this.settings.set_glider_model("JS3");
 
         // load the map
-        this.settings.load_map("./assets/maps/little_ranges", "Big Mountains")
+        this.settings.load_map("./assets/maps/big_ranges", "Big Mountains")
     }
     remove_terrain_mesh = () => {
         const terrain_object = this.world.scene.getObjectByName("terrain_mesh");
@@ -94,8 +96,8 @@ class SoaringGame {
     }
 
     score = () => {
-        const x_dist = Math.abs(this.starting_position[0] - this.user_glider.position.x);
-        const y_dist = Math.abs(this.starting_position[1] - this.user_glider.position.y);
+        const x_dist = Math.abs(this.starting_position.x - this.user_glider.position.x);
+        const y_dist = Math.abs(this.starting_position.y - this.user_glider.position.y);
         const score = (x_dist + y_dist);
         return score;
     }
@@ -140,6 +142,11 @@ class SoaringGame {
                 (start_time + 120000) - new Date().getTime())
         }, "update_instrument");
 
+        this.world.register_tick_function((tick, dt) => {
+            this.world_map.update_world_map(this.user_glider.position,
+                                            this.latest_event);
+        }, "update_world_map");
+
         // Move the camera to follow the glider positon
         this.world.register_tick_function((tick, dt) => {
             this.camera_to_follow_object(this.user_glider.position)
@@ -157,10 +164,8 @@ class SoaringGame {
         }
         this.world_start_time = new Date().getTime();
 
-        this.starting_position[0] = this.settings.terrain.height_map.length / 2 + (this.settings.terrain.height_map.length / 4 * (Math.random() - 0.5));
-        this.starting_position[1] = this.settings.terrain.height_map[0].length / 2 + (this.settings.terrain.height_map[0].length / 4 * (Math.random() - 0.5));
-
-        console.log(this.starting_position)
+        this.starting_position.x = this.settings.terrain.height_map.length / 2 + (this.settings.terrain.height_map.length / 4 * (Math.random() - 0.5));
+        this.starting_position.y = this.settings.terrain.height_map[0].length / 2 + (this.settings.terrain.height_map[0].length / 4 * (Math.random() - 0.5));
 
         // Create the "world"
         this.world = new World(this.game_window_div,
@@ -170,9 +175,9 @@ class SoaringGame {
             this.settings.camera_y_offset);
 
         // Set initial camera position
-        this.world.camera.position.x = this.starting_position[0] - this.settings.camera_x_offset;
-        this.world.camera.position.y = this.starting_position[1] - this.settings.camera_y_offset;
-        this.world.camera.position.z = this.starting_position[2] + this.settings.camera_z_offset;
+        this.world.camera.position.x = this.starting_position.x - this.settings.camera_x_offset;
+        this.world.camera.position.y = this.starting_position.y - this.settings.camera_y_offset;
+        this.world.camera.position.z = this.starting_position.z + this.settings.camera_z_offset;
 
         // Create flight instrument
         this.flight_instrument = new FlightInstrument(this.game_window_div, this.dim_x);
@@ -180,6 +185,7 @@ class SoaringGame {
         // Create the glider object
         this.user_glider = new Glider(this.starting_position, this.settings.glider_model, this.settings.glider_color, velocity_ne, this.settings.height_scaling_factor);
 
+        this.world_map = new WorldMap(this.game_window_div, this.dim_x, this.dim_y, this.starting_position, this.settings.terrain.color_map, this.settings)
         // Add a light to the world
         this.light = createDirectionalLight(this.settings.light_position);
 
@@ -199,8 +205,10 @@ class SoaringGame {
     clear = () => {
         const game_canvas = document.getElementById("game_canvas");
         const flight_instrument = document.getElementById("flight_instrument");
+        const world_map = document.getElementById("world_map");
         game_canvas?.remove();
         flight_instrument?.remove();
+        world_map?.remove();
     }
     remove_tick_function = (name) => {
         this.world.remove_tick_function(name)

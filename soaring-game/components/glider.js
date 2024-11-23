@@ -53,11 +53,11 @@ class Glider {
         this.thermalling = false;
         this.starting_position = starting_position;
         this.position = {
-            x: starting_position[0],
-            y: starting_position[1],
-            z: starting_position[2]
+            x: starting_position.x,
+            y: starting_position.y,
+            z: starting_position.z
         };
-        this.agl = this.starting_position[2]
+        this.agl = this.starting_position.z
         this.crashed = false;
         this.flutter = false;
         this.stalled = false;

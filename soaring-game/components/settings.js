@@ -24,6 +24,7 @@ class SettingsManager {
         this.camera_y_offset = 10;
         this.camera_z_offset = 10;
         this.camera_spring_constant = 0.05;
+        this.initial_zoom_level = 50
         this.glider_color_options = ["#fe0101", "#2982ff", "#a8ff94", "#7f00ad"];
         this.glider_color = this.glider_color_options[0];
     }
