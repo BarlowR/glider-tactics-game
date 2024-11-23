@@ -4,6 +4,7 @@ import { GliderModel, Glider } from "./glider.js"
 import { MenuContainer } from "./menu.js"
 import { SettingsManager } from "./settings.js"
 import { WorldMap } from "./world_map.js"
+import { MultiplayerClient } from "./multiplayer_client.js"
 
 const velocity_ne = 260;
 
@@ -19,6 +20,8 @@ class SoaringGame {
 
         // Create the settings singleton
         this.settings = new SettingsManager();
+
+        this.multiplayer_client = new MultiplayerClient()
 
         // Setup member variables
         this.starting_position = {x: 0, 
@@ -60,6 +63,7 @@ class SoaringGame {
             } else if (e.type == 'keyup') {
                 if (e.key == "r") {
                     this.reset = true;
+                    // this.multiplayer_client.send_message(this.join_message("rob"))
                 } else if (e.key == this.latest_event) {
                     this.latest_event = "";
                 }
@@ -68,6 +72,15 @@ class SoaringGame {
         onclick = (e) => {
             this.menu.state.onclick(e);
         }
+    }
+
+    join_message = (name) => {
+        const join_message = {
+            type: "join", 
+            id: name,
+            color: this.settings.glider_color
+        }
+        return (JSON.stringify(join_message));
     }
 
     check_end_criteria = () => {
