@@ -3,13 +3,13 @@ import asyncio
 import websockets
 from websockets.asyncio.server import broadcast, serve
 import json
-from enum import Enum
+from enum import IntEnum
 
 
 UPDATE_TIME_MS = 100
 
 
-class GameStates(Enum):
+class GameStates(IntEnum):
     WAITING_FOR_START = 0
     RUNNING = 1
     COMPLETED = 2
@@ -18,21 +18,25 @@ class SoaringGameState:
     gliders = {}
     map = None
     game_state = GameStates.WAITING_FOR_START
+    world_time = None
 
     def register_new_glider(self, name, color):
         self.gliders[name] = {"color": color,
                               "position": {"x": 0, "y": 0, "z": 0}}
     
     def remove_glider(self, name):
-        if (name in self.gliders.keys()):
-            del self.gliders[name]
+        self.gliders.pop(name, None)
+
 
     def update_position(self, glider_id, position):
         if glider_id in self.gliders.keys():
             self.gliders[glider_id]["position"] = position
 
     def generate_glider_position_report(self):
-        return json.dumps(self.gliders)
+        return json.dumps({"type" : "report",
+                            "report" :  {"world_time" : self.world_time,
+                                        "game_state:" : int(self.game_state),
+                                        "gliders" : self.gliders}})
     
     def check_finished(self):
         return False
@@ -76,6 +80,7 @@ async def join(websocket, id, color):
         await listen_client(websocket, id, GAME_INSTANCE)
     finally:
         print(f"Player {id} Left")
+        GAME_INSTANCE.remove_glider(id)
         CONNECTED_PLAYERS.remove(websocket)
 
 async def update_connected(connected, game_state):

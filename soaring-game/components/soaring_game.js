@@ -31,7 +31,7 @@ class SoaringGame {
         this.reset = false;
 
         // Create the menu system
-        this.menu = new MenuContainer(this.game_window_div, dim_x, dim_y, this.settings);
+        this.menu = new MenuContainer(this.game_window_div, dim_x, dim_y, this.settings, this.multiplayer_client);
         this.menu.set_start(this.start);
 
         // register DOM event functions
@@ -63,7 +63,6 @@ class SoaringGame {
             } else if (e.type == 'keyup') {
                 if (e.key == "r") {
                     this.reset = true;
-                    // this.multiplayer_client.send_message(this.join_message("rob"))
                 } else if (e.key == this.latest_event) {
                     this.latest_event = "";
                 }
@@ -72,15 +71,6 @@ class SoaringGame {
         onclick = (e) => {
             this.menu.state.onclick(e);
         }
-    }
-
-    join_message = (name) => {
-        const join_message = {
-            type: "join", 
-            id: name,
-            color: this.settings.glider_color
-        }
-        return (JSON.stringify(join_message));
     }
 
     check_end_criteria = () => {

@@ -6,9 +6,10 @@ const k_vertical_unit_length = 1000 //m
 const k_time_scaling = 100 //m
 
 class GliderModel {
-    constructor(model_name, polar, sprite_folder){
+    constructor(model_name, polar, sprite_folder, color){
         this.model_name = model_name;
         this.polar = polar;
+        this.color = color;
         console.log(sprite_folder)
         this.sprite_materials = [
             new THREE.TextureLoader().load(sprite_folder + 'up.png'),
@@ -25,15 +26,19 @@ class GliderModel {
             this.sprite_materials[tex].magFilter = THREE.NearestFilter;
         }
     } 
+
+    set_color = (color) => {
+        this.color = color
+    }
 }
 
 class Glider {
     constructor(starting_position, glider_model, color, velocity_ne, height_scaling_factor) {
         this.glider_model = glider_model
         this.height_scaling_factor = height_scaling_factor;
-        this.color = color
+        this.glider_model.set_color(color);
 
-        const material = new THREE.SpriteMaterial({ map: this.glider_model.sprite_materials[0], color : this.color});
+        const material = new THREE.SpriteMaterial({ map: this.glider_model.sprite_materials[0], color : this.glider_model.color});
 
         this.mesh = new THREE.Sprite(material);
         this.mesh.position.set(0, 0, -5);

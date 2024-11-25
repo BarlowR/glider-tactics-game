@@ -1,4 +1,4 @@
-import { JS3 } from "./glider_models/js3"
+import { create_jS3 } from "./glider_models/js3"
 import { height_map_to_color_map } from "./terrain_tools.js"
 import { create_terrain_mesh } from "./terrain_tools.js"
 
@@ -30,7 +30,7 @@ class SettingsManager {
     }
     set_glider_model = (model_name) => {
         if (model_name == "JS3") {
-            this.glider_model = JS3
+            this.glider_model = create_jS3(this.glider_color)
         } else {
             throw new Error("Unknown glider model");
         }

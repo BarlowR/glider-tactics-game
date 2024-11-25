@@ -21,7 +21,8 @@ const glide_polar_js3 = {
     260: -3.4
 }
 
-const JS3 = new GliderModel("JS3", glide_polar_js3, "./assets/toyplane/");
+function create_jS3(color) {
+    return new GliderModel("JS3", glide_polar_js3, "./assets/toyplane/", "#ffffff");
+} 
 
-
-export { JS3 }
+export { create_jS3 }

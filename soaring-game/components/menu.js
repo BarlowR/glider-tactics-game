@@ -174,9 +174,9 @@ class MainMenu extends Menu {
             menu_context.change_state(new SinglePlayerMenu(this.canvas_element))
         })
         const lobby_menu = new Button(500, 300, 340, 80, "Multiplayer Lobby", 
-                                      NaN, inaccessible_text_color, 
+                                      NaN, default_text_color, 
                                       this.canvas_element.context, "lobby", () => {
-            return
+            menu_context.change_state(new MultiplayerMenu(this.canvas_element))
         })
         const instructions_menu = new Button(500, 400, 340, 80, "Instructions", 
                                       NaN, default_text_color, 
@@ -305,6 +305,64 @@ class SinglePlayerMenu extends Menu {
     }
 }
 
+
+class MultiplayerMenu extends Menu {
+    build_menu = (menu_context, background_color) =>{
+        this.fill_background(background_color);
+        var multiplayer_client = menu_context.multiplayer_client;
+        var settings = menu_context.settings;
+
+        const loading_button = new Button(500, 200, 340, 80, 
+            "loading...", NaN, inaccessible_text_color, this.canvas_element.context, "loading", () => {})
+        this.register_button(loading_button)
+        multiplayer_client.open_connection()
+
+        // wait for websocket connection attempt
+        setTimeout(() => {
+            this.remove_button("loading")
+            if (!multiplayer_client.server_connected){
+
+                this.fill_background(background_color);
+                const error_button = new Button(500, 200, 900, 80, 
+                    "Could not connect to server. Try again later", NaN, inaccessible_text_color, this.canvas_element.context, "can't join", () => {})
+                
+                const main_menu_button = new Button(500, 300, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
+                    menu_context.change_state(new MainMenu(this.canvas_element))
+                })
+                this.register_button(error_button)
+                this.register_button(main_menu_button)
+                return
+            }
+            multiplayer_client.send_join_message("Rob" + new Date().getSeconds(), settings.glider_color);
+            this.render_wait_menu(menu_context, background_color)
+        }, 100);
+    }
+
+    render_wait_menu = (menu_context, background_color) => {
+        this.fill_background(background_color);
+        this.clear = false;
+        var multiplayer_client = menu_context.multiplayer_client
+
+        var setup_text = "Connected Players: " + Object.keys(multiplayer_client.multiplayer_gliders.gliders).length
+        
+        draw_text_lines(this.canvas_element.context, setup_text, 500, 100);
+        const main_menu_button = new Button(500, 300, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
+            menu_context.change_state(new MainMenu(this.canvas_element))
+            multiplayer_client.close_connection();
+            this.clear = true;
+        })
+        this.register_button(main_menu_button)
+
+        setTimeout(() => {
+            if (this.clear){
+                return
+            }
+            this.remove_all_buttons()
+            this.render_wait_menu(menu_context, background_color)
+        }, 100)
+    }
+}
+
 class InstructionsMenu extends Menu {
     build_menu = (menu_context, background_color) =>{
         this.fill_background(background_color);
@@ -328,6 +386,7 @@ class MenuContainer {
         width,
         height,
         settings,
+        multiplayer_client,
         base_color = "#000000",
         highlight_color = "#e1d9d9",
         highlight_color_2 = "#ffffff",
@@ -342,6 +401,7 @@ class MenuContainer {
         this.canvas_pixel_height = height;
         
         this.settings = settings
+        this.multiplayer_client = multiplayer_client
 
         fi_canvas.style.width = width + "px";
         fi_canvas.style.height = height + "px";
