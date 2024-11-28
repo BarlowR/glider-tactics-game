@@ -47,11 +47,11 @@ class SoaringGameState:
     
     def start_flight(self):
         print("Start Flight")
-        self.world_time = 0
+        self.world_time = 120 * 1000
         self.game_state = GameStates.RUNNING
 
     def run_flight(self):
-        self.world_time += self.period   
+        self.world_time -= self.period   
         if (self.check_finished()):
             self.end_flight()
         return
@@ -90,7 +90,7 @@ class SoaringGameState:
                                         "gliders" : self.gliders}})
     
     def check_finished(self):
-        return self.world_time > 120000
+        return self.world_time <= 0
 
 
 CONNECTED_PLAYERS = set()

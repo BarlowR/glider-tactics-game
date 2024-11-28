@@ -14,7 +14,9 @@ class MultiplayerGliders {
             model: create_jS3(color),
             name: name,
             color: color,
-            dynamics: new GliderDynamics()
+            dynamics: new GliderDynamics(0, 0, false,
+                                         {x: 0, y: 0, z: 0},
+                                         {x:0, y:0, z: 0})
         }
     }
     update_glider_dynamics = (id, dynamics) => {
@@ -112,7 +114,7 @@ class MultiplayerClient {
     handle_report = (report) => {
         this.multiplayer_gliders.update_server_info(report)
         var existing_gliders =  new Set(Object.keys(this.multiplayer_gliders.gliders))
-        for (const [glider_id, glider_info] of Object.entries(report.gliders)){            
+        for (const [glider_id, glider_info] of Object.entries(report.gliders)){           
             if (glider_id in this.multiplayer_gliders.gliders){
                 this.multiplayer_gliders.update_glider_dynamics(glider_id, glider_info.dynamics)
             } else if (glider_id != this.id){

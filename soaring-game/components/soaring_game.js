@@ -214,7 +214,6 @@ class SoaringGame {
             var multiplayer_gliders = this.multiplayer_client.multiplayer_gliders.gliders
             for (const glider_id in multiplayer_gliders){
                 var multiplayer_glider = multiplayer_gliders[glider_id]
-                console.log(multiplayer_glider)
                 this.multiplayer_gliders[glider_id] = new Glider(this.starting_position, multiplayer_glider.model, multiplayer_glider.color, velocity_ne, this.settings.height_scaling_factor);
                 this.world.scene.add(this.multiplayer_gliders[glider_id].mesh, this.multiplayer_gliders[glider_id].line)
             }

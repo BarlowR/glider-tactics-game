@@ -316,11 +316,14 @@ class SinglePlayerMenu extends Menu {
 
 
 class MultiplayerMenu extends Menu {
+    constructor(canvas_element) {
+        super(canvas_element)
+        this.last_game_state = 1;
+    }
     build_menu = (menu_context, background_color) =>{
         this.fill_background(background_color);
         var multiplayer_client = menu_context.multiplayer_client;
         var settings = menu_context.settings;
-
         const loading_button = new Button(500, 200, 340, 80, 
             "loading...", NaN, inaccessible_text_color, this.canvas_element.context, "loading", () => {})
         this.register_button(loading_button)
@@ -353,10 +356,15 @@ class MultiplayerMenu extends Menu {
         this.fill_background(background_color);
         this.clear = false;
         var multiplayer_client = menu_context.multiplayer_client
-
         var setup_text = "Connected Players: " + (1 + Object.keys(multiplayer_client.multiplayer_gliders.gliders).length)
-        setup_text += "\nNext Flight begins in : " + (multiplayer_client.multiplayer_gliders.server_time /1000).toFixed(0)
-
+        if (multiplayer_client.multiplayer_gliders.game_state == 0){
+            setup_text += "\nNext Flight begins in : " + (multiplayer_client.multiplayer_gliders.server_time /1000).toFixed(0)
+        } else if (multiplayer_client.multiplayer_gliders.game_state == 1 ) {
+            setup_text += "\nFlight in progress. Time remaining: " + (10 + multiplayer_client.multiplayer_gliders.server_time /1000).toFixed(0)
+        } else if (multiplayer_client.multiplayer_gliders.game_state == 2 ) {
+            setup_text += "\nScoring in progress. Time remaining: " + ( multiplayer_client.multiplayer_gliders.server_time /1000).toFixed(0)
+        }
+        
         draw_text_lines(this.canvas_element.context, setup_text, 500, 100);
         const main_menu_button = new Button(500, 300, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
             menu_context.change_state(new MainMenu(this.canvas_element))
@@ -364,17 +372,17 @@ class MultiplayerMenu extends Menu {
             this.clear = true;
         })
         this.register_button(main_menu_button)
-
         setTimeout(() => {
             if (this.clear){
                 return
             }
-            this.remove_all_buttons()
-            if (multiplayer_client.multiplayer_gliders.game_state == 1){
+            // This should check for transition into running, so that new users can't join in the middle
+            if (multiplayer_client.multiplayer_gliders.game_state == 1 && this.last_game_state != 1){
                 if (menu_context.start()){
                     menu_context.change_state(new HiddenMenu(this.canvas_element))
                 }
             } else {
+                this.last_game_state = multiplayer_client.multiplayer_gliders.game_state;
                 this.render_wait_menu(menu_context, background_color)
             }
         }, 100)
@@ -398,7 +406,7 @@ class MultiplayerEndMenu extends Menu {
 
         var setup_text = "End of Flight\n" 
         setup_text += "Scores:\n"
-        setup_text += "User: ___\n"  
+        setup_text += "User: ____"   
         
         for (const glider_id of this.competing_gliders){
             if (!(glider_id in multiplayer_client.multiplayer_gliders.gliders)){
