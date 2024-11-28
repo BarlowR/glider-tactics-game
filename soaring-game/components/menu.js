@@ -322,6 +322,8 @@ class MultiplayerMenu extends Menu {
     }
     build_menu = (menu_context, background_color) =>{
         this.fill_background(background_color);
+
+        // Force use of Big Mountains
         var multiplayer_client = menu_context.multiplayer_client;
         var settings = menu_context.settings;
         const loading_button = new Button(500, 200, 340, 80, 
@@ -347,6 +349,9 @@ class MultiplayerMenu extends Menu {
                 multiplayer_client.send_join_message("Rob", settings.glider_color);
                 this.render_wait_menu(menu_context, background_color)
             }, 100);
+            if (!settings.terrain.name == "Big Mountains"){
+                menu_context.settings.load_map("./assets/maps/big_ranges", "Big Mountains");
+            }
         } else {
             this.render_wait_menu(menu_context, background_color)
         }
