@@ -68,7 +68,7 @@ class SoaringGameState:
     def update(self):
         if (len(self.gliders) == 0):
             self.game_state = GameStates.WAITING_FOR_START
-            self.world_time = 0
+            self.world_time = WAIT_TIME_MS
             return
 
         if (self.game_state == GameStates.WAITING_FOR_START):
