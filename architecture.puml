@@ -1,0 +1,89 @@
+@startuml
+
+participant Client2
+participant Client1
+
+activate Client1
+
+
+box "Server" #LightBlue
+participant Server
+participant GameState
+end box
+
+
+Client1 -> Server : Open Websocket 
+activate Server
+Server -> Client1 : Websocket opened
+
+
+Client1 -> Server : Message Type "Join"
+
+alt successful case
+    group Client1 Registered
+    Server -> GameState : Begin
+    activate GameState
+    Server -> GameState : Register Glider
+
+
+    Server -> Client1 : Join Accepted
+    GameState -> Server : State Stream
+    note over GameState, Server: Position of all Gliders, \nServer time, \nPhase  
+
+    Server -> Client1 : State Stream
+end
+
+Client2 -> Server : Open Websocket
+activate Client2
+
+Server -> Client2 : Websocket opened
+
+Client2 -> Server : Message Type "Join"
+
+alt successful case
+    group Client2 Registered
+    Server -> GameState : Register Glider
+    Server -> Client2 : Join Accepted
+
+    GameState -> Server : State Stream
+    Server -> Client2 : State Stream
+end
+
+alt successful case
+    group Gameplay
+    Server -> GameState: Timer Elapsed, Begin
+    GameState -> Server: Begin State
+    Server -> Client1: Begin Flying
+    Server -> Client2: Begin Flying
+
+    Client1 -> Server: Position Stream
+    Client2 -> Server: Position Stream
+
+
+    GameState -> GameState: Check End Condition
+    GameState -> Server: End Condition Met
+    Server -> Client1: End
+    Server -> Client2: End
+    
+end
+
+alt successful case
+    group Client1
+    Client1 -> Server : Leave
+    deactivate Client1
+    Server -> GameState : Delete Glider
+end
+
+alt successful case
+    group Client2
+    Client2 -> Server : Leave
+    deactivate Client2
+    Server -> GameState : Delete Glider
+    Server -> GameState : End
+    deactivate GameState
+end
+
+deactivate Server
+
+
+@enduml

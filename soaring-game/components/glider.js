@@ -10,7 +10,6 @@ class GliderModel {
         this.model_name = model_name;
         this.polar = polar;
         this.color = color;
-        console.log(sprite_folder)
         this.sprite_materials = [
             new THREE.TextureLoader().load(sprite_folder + 'up.png'),
             new THREE.TextureLoader().load(sprite_folder + 'right.png'),
@@ -155,9 +154,17 @@ class Glider {
         }
         
         // Update position from velocity
-        this.position.x += this.velocity.x * 1 / k_horizontal_unit_length * dt / 1000 * k_time_scaling;
-        this.position.y += this.velocity.y * 1 / k_horizontal_unit_length * dt / 1000 * k_time_scaling;
-        this.position.z += this.velocity.z * 1 / k_vertical_unit_length * dt / 1000 * k_time_scaling;
+        const new_position = { x: this.position.x + this.velocity.x * 1 / k_horizontal_unit_length * dt / 1000 * k_time_scaling,
+                               y: this.position.y + this.velocity.y * 1 / k_horizontal_unit_length * dt / 1000 * k_time_scaling,
+                               z: this.position.z + this.velocity.z * 1 / k_vertical_unit_length * dt / 1000 * k_time_scaling}
+
+       this.update_position(new_position)
+    }
+
+    update_position = (position) => {
+        this.position.x = position.x
+        this.position.y = position.y
+        this.position.z = position.z
 
         // There has to be a better way to assign properties?
         this.mesh.position.x = this.position.x;
@@ -168,6 +175,7 @@ class Glider {
         this.line.position.y = this.mesh.position.y;
         this.line.position.z = this.mesh.position.z;
     }
+
     check_collision(height_map) {
         const x_index = Math.round(this.position.x);
         const y_index = Math.round(this.position.y);

@@ -8,9 +8,11 @@ class MultiplayerGliders {
         this.game_state 
         this.server_time
     }
-    register_glider = (name, color) => {
-        this.gliders[name] = {
+    register_glider = (id, name, color) => {
+        this.gliders[id] = {
             model: create_jS3(color),
+            name: name,
+            color: color,
             position: {
                 x: 0,
                 y: 0, 
@@ -18,12 +20,13 @@ class MultiplayerGliders {
             }
         }
     }
-    update_glider_position = (name, position) => {
-        this.gliders[name] = position
+    update_glider_position = (id, position) => {
+        this.gliders[id].position = position
     }
-    update_server_info = (time, game_state) => {
-        this.server_time = time
-        this.game_state = game_state
+    update_server_info = (report) => {
+        this.starting_position = report.starting_position
+        this.server_time = report.world_time
+        this.game_state = report.game_state
     }
     remove_glider = (name) => {
         if (this.gliders[name]){
@@ -41,6 +44,7 @@ class MultiplayerClient {
         this.server_connected = false
         this.server_websocket;
         this.multiplayer_gliders = new MultiplayerGliders()
+        this.id
     }
 
     open_connection = () => {
@@ -67,12 +71,23 @@ class MultiplayerClient {
     }
 
     send_join_message = (name, color) => {
+        this.id = Math.random().toString(16).slice(10)
         const join_message = {
             type: "join", 
-            id: name,
+            id: this.id,
+            name: name,
             color: color
         }
         this.send_message(JSON.stringify(join_message));
+    }
+
+    send_position_message = (position, velocity) => {
+        const position_message = {
+            type: "update_position", 
+            position: position,
+            velocity: velocity,
+        }
+        this.send_message(JSON.stringify(position_message));
     }
 
     send_message = (string_message) => {
@@ -93,21 +108,23 @@ class MultiplayerClient {
             console.log("Unknown Message")
         }
         
-        this.handle_report(data.report)
+        if (data.type == "report") {
+            this.handle_report(data.report)
+        }
     }
 
     handle_report = (report) => {
-        this.multiplayer_gliders.update_server_info(report.time, report.game_state)
+        this.multiplayer_gliders.update_server_info(report)
         var existing_gliders =  new Set(Object.keys(this.multiplayer_gliders.gliders))
-        for (const [glider_name, glider_info] of Object.entries(report.gliders)){            
-            if (glider_name in this.multiplayer_gliders.gliders){
-                this.multiplayer_gliders.update_glider_position(glider_name, glider_info.position)
-            } else {
-                console.log("Registering New Glider: ", glider_name)
-                this.multiplayer_gliders.register_glider(glider_name, glider_info.color)
+        for (const [glider_id, glider_info] of Object.entries(report.gliders)){            
+            if (glider_id in this.multiplayer_gliders.gliders){
+                this.multiplayer_gliders.update_glider_position(glider_id, glider_info.position)
+            } else if (glider_id != this.id){
+                console.log("Registering New Glider: ", glider_id)
+                this.multiplayer_gliders.register_glider(glider_id, glider_info.name, glider_info.color)
             }
-            if (existing_gliders.has(glider_name)){
-                existing_gliders.delete(glider_name)
+            if (existing_gliders.has(glider_id)){
+                existing_gliders.delete(glider_id)
             }
         }
         

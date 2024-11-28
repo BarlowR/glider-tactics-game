@@ -18,6 +18,10 @@ class SoaringGame {
         this.dim_x = dim_x;
         this.dim_y = dim_y;
 
+        this.user_glider;
+        this.multiplayer_gliders = {};
+        this.world_map;
+
         // Create the settings singleton
         this.settings = new SettingsManager();
 
@@ -94,7 +98,7 @@ class SoaringGame {
                 end_text = "Great Job"
             }
             const score = this.score();
-            this.menu.crashed(score, end_text, this.clear);
+            this.menu.crashed(score, end_text, this.clear, this.multiplayer_client.server_connected);
         }
     }
 
@@ -138,11 +142,18 @@ class SoaringGame {
             if (!this.begin_flight) {
                 start_time = new Date().getTime();
             }
+
+            var time_to_display
+            if (this.multiplayer_client.server_connected){
+                time_to_display = this.multiplayer_client.multiplayer_gliders.server_time
+            } else {
+                time_to_display = (start_time + 120000) - new Date().getTime()
+            }
             this.flight_instrument.update_instrument(this.user_glider.velocity.z,
                 this.user_glider.position.z,
                 this.user_glider.agl,
                 this.user_glider.airspeed,
-                (start_time + 120000) - new Date().getTime())
+                time_to_display)
         }, "update_instrument");
 
         this.world.register_tick_function((tick, dt) => {
@@ -159,24 +170,59 @@ class SoaringGame {
         this.world.register_tick_function((tick, dt) => {
             this.check_end_criteria();
         }, "check_end_criteria");
-    }
 
+        if (this.multiplayer_client.server_connected){
+            this.world.register_tick_function((tick, dt) => {  
+                this.multiplayer_client.send_position_message(this.user_glider.position)
+                if (this.multiplayer_client.multiplayer_gliders.game_state == 2){
+                    this.stop()
+                    this.clear()
+                    this.remove_tick_function("update_multiplayer_gliders")
+                    this.menu.multiplayer_end()
+                } 
+                this.update_multiplayer_gliders();
+            }, "update_multiplayer_gliders")
+        }
+    }
+    update_multiplayer_gliders = () => {
+        var multiplayer_gliders = this.multiplayer_client.multiplayer_gliders.gliders
+        for (const glider_id in multiplayer_gliders){
+            if (glider_id in this.multiplayer_gliders && glider_id != this.multiplayer_client.id){
+                var multiplayer_glider = multiplayer_gliders[glider_id]
+                this.multiplayer_gliders[glider_id].update_position(multiplayer_glider.position)
+            } 
+        }
+    }
     start = () => {
         if (!(this.settings.terrain.loaded_thermal_map && this.settings.terrain.loaded_height_map && this.settings.terrain.mesh_created)) {
             return false
         }
         this.world_start_time = new Date().getTime();
 
-        this.starting_position.x = this.settings.terrain.height_map.length / 2 + (this.settings.terrain.height_map.length / 4 * (Math.random() - 0.5));
-        this.starting_position.y = this.settings.terrain.height_map[0].length / 2 + (this.settings.terrain.height_map[0].length / 4 * (Math.random() - 0.5));
-
+        
         // Create the "world"
         this.world = new World(this.game_window_div,
             this.dim_x,
             this.dim_y,
             this.settings.camera_x_offset,
             this.settings.camera_y_offset);
-
+            
+        if (this.multiplayer_client.server_connected){
+            
+            var multiplayer_gliders = this.multiplayer_client.multiplayer_gliders.gliders
+            for (const glider_id in multiplayer_gliders){
+                var multiplayer_glider = multiplayer_gliders[glider_id]
+                console.log(multiplayer_glider)
+                this.multiplayer_gliders[glider_id] = new Glider(multiplayer_glider.position, multiplayer_glider.model, multiplayer_glider.color, velocity_ne, this.settings.height_scaling_factor);
+                this.world.scene.add(this.multiplayer_gliders[glider_id].mesh, this.multiplayer_gliders[glider_id].line)
+            }
+            this.starting_position.x = this.multiplayer_client.multiplayer_gliders.starting_position.x
+            this.starting_position.y = this.multiplayer_client.multiplayer_gliders.starting_position.y
+        } else {
+            this.starting_position.x = this.settings.terrain.height_map.length / 2 + (this.settings.terrain.height_map.length / 4 * (Math.random() - 0.5));
+            this.starting_position.y = this.settings.terrain.height_map[0].length / 2 + (this.settings.terrain.height_map[0].length / 4 * (Math.random() - 0.5));
+        }
+            
         // Set initial camera position
         this.world.camera.position.x = this.starting_position.x - this.settings.camera_x_offset;
         this.world.camera.position.y = this.starting_position.y - this.settings.camera_y_offset;

@@ -167,6 +167,9 @@ class Menu {
 }
 class MainMenu extends Menu {
     build_menu = (menu_context, background_color) =>{
+        if (menu_context.multiplayer_client.server_connected){
+            menu_context.multiplayer_client.close_connection()
+        }
         this.fill_background(background_color);
         const single_player_menu = new Button(500, 200, 340, 80, "Single Player", 
                                       NaN, default_text_color, 
@@ -176,6 +179,7 @@ class MainMenu extends Menu {
         const lobby_menu = new Button(500, 300, 340, 80, "Multiplayer Lobby", 
                                       NaN, default_text_color, 
                                       this.canvas_element.context, "lobby", () => {
+            menu_context.multiplayer_client.open_connection()
             menu_context.change_state(new MultiplayerMenu(this.canvas_element))
         })
         const instructions_menu = new Button(500, 400, 340, 80, "Instructions", 
@@ -196,15 +200,15 @@ class MainMenu extends Menu {
 }
 
 class EndMenu extends Menu {
-    constructor(canvas_element, score, text, clear_function) {
+    constructor(canvas_element, score, text, clear_function, is_multiplayer) {
         super(canvas_element)
         this.score = score;
         this.end_text = text;
         this.clear_function = clear_function;
+        this.is_multiplayer = is_multiplayer
     }
     build_menu = (menu_context, background_color) =>{
         this.canvas_element.context.clearRect(0, 0, this.canvas_element.width, this.canvas_element.height);
-        console.log(this.score)
         const score_string = "Score: " + this.score.toFixed(0)
         const score_button = new Button(500, 200, 340, 80, score_string, default_text_color, "#ffffff", this.canvas_element.context, "crash", () => {
         })
@@ -217,6 +221,12 @@ class EndMenu extends Menu {
         this.register_button(main_menu_button);
         this.register_button(crashed_button);
         this.register_button(score_button);
+
+        if (this.is_multiplayer){
+            const multiplayer_wait = new Button(500, 500, 600, 80, "Please Wait for others to finish...", inaccessible_text_color, "#ffffff", this.canvas_element.context, "main_menu", () => {
+            })
+            this.register_button(multiplayer_wait);
+        }
     }
 }
 
@@ -257,7 +267,6 @@ class SettingsMenu extends Menu {
             this.register_button(color_button);
         }
         const using_big_terrain = settings.terrain.name == "Big Mountains";
-        console.log(using_big_terrain);
         const set_big_terrain = new Button( 500, 200, 340, 80, "Big Terrain", 
                                             (using_big_terrain ? default_text_color : NaN), 
                                             (using_big_terrain ? inaccessible_text_color : default_text_color),
@@ -315,27 +324,29 @@ class MultiplayerMenu extends Menu {
         const loading_button = new Button(500, 200, 340, 80, 
             "loading...", NaN, inaccessible_text_color, this.canvas_element.context, "loading", () => {})
         this.register_button(loading_button)
-        multiplayer_client.open_connection()
-
         // wait for websocket connection attempt
-        setTimeout(() => {
-            this.remove_button("loading")
-            if (!multiplayer_client.server_connected){
+        if (!multiplayer_client.server_connected){
+            setTimeout(() => {
+                this.remove_button("loading")
+                if (!multiplayer_client.server_connected){
 
-                this.fill_background(background_color);
-                const error_button = new Button(500, 200, 900, 80, 
-                    "Could not connect to server. Try again later", NaN, inaccessible_text_color, this.canvas_element.context, "can't join", () => {})
-                
-                const main_menu_button = new Button(500, 300, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
-                    menu_context.change_state(new MainMenu(this.canvas_element))
-                })
-                this.register_button(error_button)
-                this.register_button(main_menu_button)
-                return
-            }
-            multiplayer_client.send_join_message("Rob" + new Date().getSeconds(), settings.glider_color);
+                    this.fill_background(background_color);
+                    const error_button = new Button(500, 200, 900, 80, 
+                        "Could not connect to server. Try again later", NaN, inaccessible_text_color, this.canvas_element.context, "can't join", () => {})
+                    
+                    const main_menu_button = new Button(500, 300, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
+                        menu_context.change_state(new MainMenu(this.canvas_element))
+                    })
+                    this.register_button(error_button)
+                    this.register_button(main_menu_button)
+                    return
+                }
+                multiplayer_client.send_join_message("Rob", settings.glider_color);
+                this.render_wait_menu(menu_context, background_color)
+            }, 100);
+        } else {
             this.render_wait_menu(menu_context, background_color)
-        }, 100);
+        }
     }
 
     render_wait_menu = (menu_context, background_color) => {
@@ -343,8 +354,9 @@ class MultiplayerMenu extends Menu {
         this.clear = false;
         var multiplayer_client = menu_context.multiplayer_client
 
-        var setup_text = "Connected Players: " + Object.keys(multiplayer_client.multiplayer_gliders.gliders).length
-        
+        var setup_text = "Connected Players: " + (1 + Object.keys(multiplayer_client.multiplayer_gliders.gliders).length)
+        setup_text += "\nNext Flight begins in : " + (multiplayer_client.multiplayer_gliders.server_time /1000).toFixed(0)
+
         draw_text_lines(this.canvas_element.context, setup_text, 500, 100);
         const main_menu_button = new Button(500, 300, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
             menu_context.change_state(new MainMenu(this.canvas_element))
@@ -358,7 +370,63 @@ class MultiplayerMenu extends Menu {
                 return
             }
             this.remove_all_buttons()
-            this.render_wait_menu(menu_context, background_color)
+            if (multiplayer_client.multiplayer_gliders.game_state == 1){
+                if (menu_context.start()){
+                    menu_context.change_state(new HiddenMenu(this.canvas_element))
+                }
+            } else {
+                this.render_wait_menu(menu_context, background_color)
+            }
+        }, 100)
+    }
+}
+
+
+class MultiplayerEndMenu extends Menu {
+    build_menu = (menu_context, background_color) =>{
+        this.fill_background(background_color);
+        // Only keep track of the gliders that were in the flight
+        this.competing_gliders = Object.keys(menu_context.multiplayer_client.multiplayer_gliders.gliders)
+        this.render_end_menu(menu_context, background_color)
+
+    }
+
+    render_end_menu = (menu_context, background_color) => {
+        this.fill_background(background_color);
+        this.clear = false;
+        var multiplayer_client = menu_context.multiplayer_client
+
+        var setup_text = "End of Flight\n" 
+        setup_text += "Scores:\n"
+        setup_text += "User: ___\n"  
+        
+        for (const glider_id of this.competing_gliders){
+            if (!(glider_id in multiplayer_client.multiplayer_gliders.gliders)){
+                continue;
+            } 
+            const glider_name = multiplayer_client.multiplayer_gliders.gliders[glider_id].name
+            setup_text += glider_name + ": ___\n"
+        }
+        
+        setup_text += "Moving to lobby in : " + (multiplayer_client.multiplayer_gliders.server_time /1000).toFixed(0)
+
+        draw_text_lines(this.canvas_element.context, setup_text, 500, 100);
+        const main_menu_button = new Button(500, 400, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
+            menu_context.change_state(new MainMenu(this.canvas_element))
+            this.clear = true;
+        })
+        this.register_button(main_menu_button)
+
+        setTimeout(() => {
+            if (this.clear){
+                return
+            }
+            this.remove_all_buttons()
+            if (multiplayer_client.multiplayer_gliders.game_state == 0){
+                menu_context.change_state(new MultiplayerMenu(this.canvas_element))
+            } else {
+                this.render_end_menu(menu_context, background_color)
+            }
         }, 100)
     }
 }
@@ -430,8 +498,12 @@ class MenuContainer {
         this.start = start;
     }
 
-    crashed = (score, text, clear_function) => {
-        this.change_state(new EndMenu(this.dom_element, score, text, clear_function))
+    crashed = (score, text, clear_function, is_multiplayer) => {
+        this.change_state(new EndMenu(this.dom_element, score, text, clear_function, is_multiplayer))
+    }
+
+    multiplayer_end = () => {
+        this.change_state(new MultiplayerEndMenu(this.dom_element))
     }
 }
 
