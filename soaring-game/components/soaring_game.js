@@ -103,8 +103,8 @@ class SoaringGame {
     }
 
     score = () => {
-        const x_dist = Math.abs(this.starting_position.x - this.user_glider.position.x);
-        const y_dist = Math.abs(this.starting_position.y - this.user_glider.position.y);
+        const x_dist = Math.abs(this.starting_position.x - this.user_glider.dynamics.position.x);
+        const y_dist = Math.abs(this.starting_position.y - this.user_glider.dynamics.position.y);
         const score = (x_dist + y_dist);
         return score;
     }
@@ -149,21 +149,21 @@ class SoaringGame {
             } else {
                 time_to_display = (start_time + 120000) - new Date().getTime()
             }
-            this.flight_instrument.update_instrument(this.user_glider.velocity.z,
-                this.user_glider.position.z,
+            this.flight_instrument.update_instrument(this.user_glider.dynamics.velocity.z,
+                this.user_glider.dynamics.position.z,
                 this.user_glider.agl,
-                this.user_glider.airspeed,
+                this.user_glider.dynamics.airspeed,
                 time_to_display)
         }, "update_instrument");
 
         this.world.register_tick_function((tick, dt) => {
-            this.world_map.update_world_map(this.user_glider.position,
+            this.world_map.update_world_map(this.user_glider.dynamics.position,
                                             this.latest_event);
         }, "update_world_map");
 
         // Move the camera to follow the glider positon
         this.world.register_tick_function((tick, dt) => {
-            this.camera_to_follow_object(this.user_glider.position)
+            this.camera_to_follow_object(this.user_glider.dynamics.position)
         }, "follow_user_glider");
 
 
@@ -173,23 +173,25 @@ class SoaringGame {
 
         if (this.multiplayer_client.server_connected){
             this.world.register_tick_function((tick, dt) => {  
-                this.multiplayer_client.send_position_message(this.user_glider.position)
+                this.multiplayer_client.send_dynamics_message(this.user_glider.dynamics)
                 if (this.multiplayer_client.multiplayer_gliders.game_state == 2){
                     this.stop()
                     this.clear()
                     this.remove_tick_function("update_multiplayer_gliders")
                     this.menu.multiplayer_end()
                 } 
-                this.update_multiplayer_gliders();
+                this.update_multiplayer_gliders(tick);
             }, "update_multiplayer_gliders")
         }
     }
-    update_multiplayer_gliders = () => {
+    update_multiplayer_gliders = (tick) => {
         var multiplayer_gliders = this.multiplayer_client.multiplayer_gliders.gliders
         for (const glider_id in multiplayer_gliders){
             if (glider_id in this.multiplayer_gliders && glider_id != this.multiplayer_client.id){
                 var multiplayer_glider = multiplayer_gliders[glider_id]
-                this.multiplayer_gliders[glider_id].update_position(multiplayer_glider.position)
+                this.multiplayer_gliders[glider_id].dynamics = multiplayer_glider.dynamics
+                this.multiplayer_gliders[glider_id].update_position(multiplayer_glider.dynamics.position)
+                this.multiplayer_gliders[glider_id].update_sprite(tick)
             } 
         }
     }
@@ -213,7 +215,7 @@ class SoaringGame {
             for (const glider_id in multiplayer_gliders){
                 var multiplayer_glider = multiplayer_gliders[glider_id]
                 console.log(multiplayer_glider)
-                this.multiplayer_gliders[glider_id] = new Glider(multiplayer_glider.position, multiplayer_glider.model, multiplayer_glider.color, velocity_ne, this.settings.height_scaling_factor);
+                this.multiplayer_gliders[glider_id] = new Glider(this.starting_position, multiplayer_glider.model, multiplayer_glider.color, velocity_ne, this.settings.height_scaling_factor);
                 this.world.scene.add(this.multiplayer_gliders[glider_id].mesh, this.multiplayer_gliders[glider_id].line)
             }
             this.starting_position.x = this.multiplayer_client.multiplayer_gliders.starting_position.x

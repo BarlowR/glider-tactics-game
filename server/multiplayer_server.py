@@ -7,7 +7,7 @@ from enum import IntEnum
 
 
 UPDATE_TIME_MS = 10
-WAIT_TIME_MS = 10 * 1000
+WAIT_TIME_MS = 2 * 1000
 
 
 class GameStates(IntEnum):
@@ -32,9 +32,9 @@ class SoaringGameState:
     def remove_glider(self, name):
         self.gliders.pop(name, None)
 
-    def update_position(self, glider_id, position):
+    def update_dynamics(self, glider_id, dynamics):
         if glider_id in self.gliders.keys():
-            self.gliders[glider_id]["position"] = position
+            self.gliders[glider_id]["dynamics"] = dynamics
 
     def wait_for_start(self):
         self.world_time -= self.period
@@ -100,13 +100,13 @@ async def listen_client(websocket, id, game_state):
         event = json.loads(message)
 
         # Make sure it's an expected type
-        if not (event["type"] == "update_position"):
+        if not (event["type"] == "update_dynamics"):
             print("Unknown message from client ")
             continue
 
         try:
             # Update this glider's position
-            game_state.update_position(id, event["position"])
+            game_state.update_dynamics(id, event["dynamics"])
         except ValueError as exc:
             # Send an "error" event if the move was illegal.
             print(exc)

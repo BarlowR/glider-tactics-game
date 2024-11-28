@@ -5,6 +5,20 @@ const k_horizontal_unit_length = 2500 //m
 const k_vertical_unit_length = 1000 //m
 const k_time_scaling = 100 //m
 
+
+class GliderDynamics {
+    constructor(airspeed,
+                direction,
+                thermalling,
+                velocity,
+                position){
+        this.airspeed = airspeed;
+        this.direction = direction;
+        this.thermalling = thermalling;
+        this.velocity = velocity;
+        this.position = position;
+    }
+}
 class GliderModel {
     constructor(model_name, polar, sprite_folder, color){
         this.model_name = model_name;
@@ -44,23 +58,17 @@ class Glider {
         this.mesh.scale.set(2, 2 / 1.5, 1);
         // This should probably be an even divisor of 1000. 
         // This 
-        this.airspeed = 40;
-        this.direction = 0;
 
-        this.velocity_ne = velocity_ne; 
-
-        this.velocity = {
-            x: 0,
-            y: 0,
-            z: 0
-        };
-        this.thermalling = false;
+        this.dynamics = new GliderDynamics( 40, 0, false, 
+                                            {x: 0, y: 0, z: 0},
+                                            {x: starting_position.x,
+                                             y: starting_position.y,
+                                             z: starting_position.z})
+        
+        
         this.starting_position = starting_position;
-        this.position = {
-            x: starting_position.x,
-            y: starting_position.y,
-            z: starting_position.z
-        };
+        this.velocity_ne = velocity_ne; 
+        
         this.agl = this.starting_position.z
         this.crashed = false;
         this.flutter = false;
@@ -85,91 +93,91 @@ class Glider {
         // I will probably need to improve this at some point. 
         // This could also be handled by setting integer positions at set times and interpolating inbetween?
         if (latest_event == ["ArrowRight"]) {
-            this.direction = Math.PI / 2
-            this.thermalling = false;
+            this.dynamics.direction = Math.PI / 2
+            this.dynamics.thermalling = false;
         } else if (latest_event == ["ArrowLeft"]) {
-            this.direction = 3* Math.PI /2
-            this.thermalling = false;
+            this.dynamics.direction = 3* Math.PI /2
+            this.dynamics.thermalling = false;
         } else if (latest_event == ["ArrowUp"]) {
-            this.direction = 0
-            this.thermalling = false;
+            this.dynamics.direction = 0
+            this.dynamics.thermalling = false;
         } else if (latest_event == ["ArrowDown"]) {
-            this.direction = Math.PI
-            this.thermalling = false;
+            this.dynamics.direction = Math.PI
+            this.dynamics.thermalling = false;
         } else if (latest_event == ["q"]) {
-            this.airspeed += dt/1000 * 20
+            this.dynamics.airspeed += dt/1000 * 20
         } else if (latest_event == ["a"]) {
-            this.airspeed -= dt/1000 * 20
+            this.dynamics.airspeed -= dt/1000 * 20
         } else if (latest_event == [" "]) {
-            this.thermalling = true;
-            this.airspeed = 30
+            this.dynamics.thermalling = true;
+            this.dynamics.airspeed = 30
         }
-        if (this.airspeed > this.velocity_ne/3.6) {
+        if (this.dynamics.airspeed > this.velocity_ne/3.6) {
             this.flutter = true;
-        } else if (this.airspeed < 80/3.6) {
+        } else if (this.dynamics.airspeed < 80/3.6) {
             this.stalled = true;
         }
     }
     // Could potentially move lift/sink calculation serverside to obfuscate 
     lift_and_sink(thermal_map, elevation_map) {
-        const x_index = Math.round(this.position.x);
-        const y_index = Math.round(this.position.y);
+        const x_index = Math.round(this.dynamics.position.x);
+        const y_index = Math.round(this.dynamics.position.y);
         const lift_index = thermal_map[x_index][y_index];
 
-        const agl = this.position.z - elevation_map[x_index][y_index];
+        const agl = this.dynamics.position.z - elevation_map[x_index][y_index];
         // reduce thermal strength linearly within 500 m of the ground
         const agl_index = (agl > 0.5) ? 1.0 : agl + 0.5;
 
         const inversion = 5 + elevation_map[x_index][y_index] / 2;
 
-        const inversion_index = (this.position.z < inversion) ?
-            (1 - (this.position.z * this.position.z * this.position.z) / (inversion * inversion * inversion)) :
+        const inversion_index = (this.dynamics.position.z < inversion) ?
+            (1 - (this.dynamics.position.z * this.dynamics.position.z * this.dynamics.position.z) / (inversion * inversion * inversion)) :
             0;
 
         const lift = lift_index * agl_index * inversion_index;
         
         var polar_index = 80
-        if (this.airspeed * 3.6 > 80){
-            polar_index = Math.round(this.airspeed * 3.6 / 10) * 10
-        } else if (this.airspeed > this.velocity_ne){
+        if (this.dynamics.airspeed * 3.6 > 80){
+            polar_index = Math.round(this.dynamics.airspeed * 3.6 / 10) * 10
+        } else if (this.dynamics.airspeed > this.dynamics.velocity_ne){
             polar_index = 250;
         }
         var sink_rate = -3;
         if (polar_index in this.glider_model.polar){
             sink_rate = this.glider_model.polar[polar_index];
         }
-        this.velocity.z = lift_index > 0 ? lift : 0;
-        this.velocity.z += sink_rate;
+        this.dynamics.velocity.z = lift_index > 0 ? lift : 0;
+        this.dynamics.velocity.z += sink_rate;
     }
     move(dt) {
         if (this.crashed || this.flutter || this.stalled) {
             return;
         }
-        if (!this.thermalling){
-            this.velocity.x = this.airspeed * Math.sin(this.direction);
-            this.velocity.y = this.airspeed * Math.cos(this.direction);
+        if (!this.dynamics.thermalling){
+            this.dynamics.velocity.x = this.dynamics.airspeed * Math.sin(this.dynamics.direction);
+            this.dynamics.velocity.y = this.dynamics.airspeed * Math.cos(this.dynamics.direction);
         } else {
-            this.velocity.x = 0;
-            this.velocity.y = 0;
+            this.dynamics.velocity.x = 0;
+            this.dynamics.velocity.y = 0;
         }
         
         // Update position from velocity
-        const new_position = { x: this.position.x + this.velocity.x * 1 / k_horizontal_unit_length * dt / 1000 * k_time_scaling,
-                               y: this.position.y + this.velocity.y * 1 / k_horizontal_unit_length * dt / 1000 * k_time_scaling,
-                               z: this.position.z + this.velocity.z * 1 / k_vertical_unit_length * dt / 1000 * k_time_scaling}
+        const new_position = { x: this.dynamics.position.x + this.dynamics.velocity.x * 1 / k_horizontal_unit_length * dt / 1000 * k_time_scaling,
+                               y: this.dynamics.position.y + this.dynamics.velocity.y * 1 / k_horizontal_unit_length * dt / 1000 * k_time_scaling,
+                               z: this.dynamics.position.z + this.dynamics.velocity.z * 1 / k_vertical_unit_length * dt / 1000 * k_time_scaling}
 
        this.update_position(new_position)
     }
 
     update_position = (position) => {
-        this.position.x = position.x
-        this.position.y = position.y
-        this.position.z = position.z
+        this.dynamics.position.x = position.x
+        this.dynamics.position.y = position.y
+        this.dynamics.position.z = position.z
 
         // There has to be a better way to assign properties?
-        this.mesh.position.x = this.position.x;
-        this.mesh.position.y = this.position.y;
-        this.mesh.position.z = this.position.z * this.height_scaling_factor;
+        this.mesh.position.x = this.dynamics.position.x;
+        this.mesh.position.y = this.dynamics.position.y;
+        this.mesh.position.z = this.dynamics.position.z * this.height_scaling_factor;
 
         this.line.position.x = this.mesh.position.x;
         this.line.position.y = this.mesh.position.y;
@@ -177,16 +185,16 @@ class Glider {
     }
 
     check_collision(height_map) {
-        const x_index = Math.round(this.position.x);
-        const y_index = Math.round(this.position.y);
+        const x_index = Math.round(this.dynamics.position.x);
+        const y_index = Math.round(this.dynamics.position.y);
         const ground = height_map[x_index][y_index];
-        this.agl = this.position.z - ground;
+        this.agl = this.dynamics.position.z - ground;
         if (this.agl <= 0) {
             this.crashed = true;
         }
     }
     update_sprite(tick) {
-        if (this.thermalling) {
+        if (this.dynamics.thermalling) {
             var circle = (Math.floor(tick / k_rotation_ticks) % 4);
             if (circle == 0) {
                 this.mesh.material.map = this.glider_model.sprite_materials[4];
@@ -197,13 +205,13 @@ class Glider {
             } else if (circle == 3) {
                 this.mesh.material.map = this.glider_model.sprite_materials[7];
             }
-        } else if (this.direction == 0) {
+        } else if (this.dynamics.direction == 0) {
             this.mesh.material.map = this.glider_model.sprite_materials[0];
-        } else if (this.direction == Math.PI/2) {
+        } else if (this.dynamics.direction == Math.PI/2) {
             this.mesh.material.map = this.glider_model.sprite_materials[1];
-        } else if (this.direction == Math.PI) {
+        } else if (this.dynamics.direction == Math.PI) {
             this.mesh.material.map = this.glider_model.sprite_materials[2];
-        } else if (this.direction == 3 * Math.PI/2) {
+        } else if (this.dynamics.direction == 3 * Math.PI/2) {
             this.mesh.material.map = this.glider_model.sprite_materials[3];
         }
     }
@@ -216,4 +224,4 @@ class Glider {
     }
 }
 
-export {GliderModel, Glider };
+export {GliderModel, Glider, GliderDynamics};

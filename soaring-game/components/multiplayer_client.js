@@ -1,5 +1,6 @@
 import { cameraNear, Float16BufferAttribute } from "three/webgpu"
 import { create_jS3 } from "./glider_models/js3.js"
+import { GliderDynamics } from "./glider.js"
 
 class MultiplayerGliders {
     constructor() {
@@ -13,15 +14,11 @@ class MultiplayerGliders {
             model: create_jS3(color),
             name: name,
             color: color,
-            position: {
-                x: 0,
-                y: 0, 
-                z: 0
-            }
+            dynamics: new GliderDynamics()
         }
     }
-    update_glider_position = (id, position) => {
-        this.gliders[id].position = position
+    update_glider_dynamics = (id, dynamics) => {
+        this.gliders[id].dynamics = dynamics
     }
     update_server_info = (report) => {
         this.starting_position = report.starting_position
@@ -81,13 +78,12 @@ class MultiplayerClient {
         this.send_message(JSON.stringify(join_message));
     }
 
-    send_position_message = (position, velocity) => {
-        const position_message = {
-            type: "update_position", 
-            position: position,
-            velocity: velocity,
+    send_dynamics_message = (dynamics) => {
+        const dynamics_message = {
+            type: "update_dynamics", 
+            dynamics: dynamics,
         }
-        this.send_message(JSON.stringify(position_message));
+        this.send_message(JSON.stringify(dynamics_message));
     }
 
     send_message = (string_message) => {
@@ -118,7 +114,7 @@ class MultiplayerClient {
         var existing_gliders =  new Set(Object.keys(this.multiplayer_gliders.gliders))
         for (const [glider_id, glider_info] of Object.entries(report.gliders)){            
             if (glider_id in this.multiplayer_gliders.gliders){
-                this.multiplayer_gliders.update_glider_position(glider_id, glider_info.position)
+                this.multiplayer_gliders.update_glider_dynamics(glider_id, glider_info.dynamics)
             } else if (glider_id != this.id){
                 console.log("Registering New Glider: ", glider_id)
                 this.multiplayer_gliders.register_glider(glider_id, glider_info.name, glider_info.color)
