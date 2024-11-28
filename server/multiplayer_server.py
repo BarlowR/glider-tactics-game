@@ -27,7 +27,11 @@ class SoaringGameState:
     def register_new_glider(self, id, name, color):
         self.gliders[id] = {"color": color,
                               "name": name,
-                              "position": {"x": 0, "y": 0, "z": 0}}
+                              "dynamics": {"airspeed": 0,
+                                           "direction" : 0,
+                                            "thermalling" : False,
+                                            "velocity" : {"x": 0, "y": 0, "z": 0},
+                                            "position" : {"x": 0, "y": 0, "z": 0}}}
     
     def remove_glider(self, name):
         self.gliders.pop(name, None)
