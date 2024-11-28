@@ -35,7 +35,7 @@ class MultiplayerGliders {
 }
 
 class MultiplayerClient {
-    constructor (host = "localhost", port = 8080) {
+    constructor (host = "34.222.249.134", port = 8080) {
         this.host = host
         this.port = port
         this.server_connected = false

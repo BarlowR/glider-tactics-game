@@ -7,7 +7,7 @@ from enum import IntEnum
 
 
 UPDATE_TIME_MS = 10
-WAIT_TIME_MS = 2 * 1000
+WAIT_TIME_MS = 10 * 1000
 
 
 class GameStates(IntEnum):
@@ -66,7 +66,10 @@ class SoaringGameState:
             print("Lobby")
 
     def update(self):
-        self.update
+        if (len(self.gliders) == 0):
+            self.game_state = GameStates.WAITING_FOR_START
+            self.world_time = 0
+
         if (self.game_state == GameStates.WAITING_FOR_START):
             self.wait_for_start()
         elif (self.game_state == GameStates.RUNNING):
@@ -82,7 +85,7 @@ class SoaringGameState:
                                         "gliders" : self.gliders}})
     
     def check_finished(self):
-        return self.world_time > 10000
+        return self.world_time > 120000
 
 
 CONNECTED_PLAYERS = set()
