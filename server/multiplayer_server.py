@@ -144,8 +144,12 @@ async def handler(websocket):
         message = await websocket.recv()
     except Exception as e:
         return
-    event = json.loads(message)
-    assert "type" in event.keys()
+    print(message)
+    try: 
+        event = json.loads(message)
+        assert "type" in event.keys()
+    except:
+        print("Could not load message: ", message)
 
     if event["type"] == "join":
         # Second player joins an existing game.
@@ -154,11 +158,11 @@ async def handler(websocket):
 
 async def main():
     # SSL Context setup
-    ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
     ssl_context.load_cert_chain(certfile="/etc/letsencrypt/live/soaring-server.barlowr.com/fullchain.pem", 
                                 keyfile="/etc/letsencrypt/live/soaring-server.barlowr.com/privkey.pem")
 
-    async with serve(handler, "", 8080, ssl=ssl_context):
+    async with serve(handler, "0.0.0.0", 8080, ssl=ssl_context):
         await run_game(CONNECTED_PLAYERS, GAME_INSTANCE)
         await asyncio.get_running_loop().create_future()  # run forever
 
