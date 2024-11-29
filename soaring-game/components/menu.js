@@ -348,7 +348,7 @@ class MultiplayerMenu extends Menu {
                 }
                 multiplayer_client.send_join_message("Rob", settings.glider_color);
                 this.render_wait_menu(menu_context, background_color)
-            }, 100);
+            }, 1000);
             if (!settings.terrain.name == "Big Mountains"){
                 menu_context.settings.load_map("./assets/maps/big_ranges", "Big Mountains");
             }
