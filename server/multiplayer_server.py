@@ -4,6 +4,7 @@ import websockets
 from websockets.asyncio.server import broadcast, serve
 import json
 from enum import IntEnum
+import ssl
 
 
 UPDATE_TIME_MS = 10
@@ -152,7 +153,12 @@ async def handler(websocket):
         await join(websocket, event["id"], event["name"], event["color"])
 
 async def main():
-    async with serve(handler, "", 8080):
+    # SSL Context setup
+    ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+    ssl_context.load_cert_chain(certfile="/etc/letsencrypt/live/soaring-server.barlowr.com/fullchain.pem", 
+                                keyfile="/etc/letsencrypt/live/soaring-server.barlowr.com/privkey.pem")
+
+    async with serve(handler, "", 8080, ssl=ssl_context):
         await run_game(CONNECTED_PLAYERS, GAME_INSTANCE)
         await asyncio.get_running_loop().create_future()  # run forever
 
