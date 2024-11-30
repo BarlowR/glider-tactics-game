@@ -1,2 +1,4 @@
 __pycache__/
 *.py[cod]
+soaring-game/public/config.json
+server/config.json
