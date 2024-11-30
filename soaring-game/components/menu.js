@@ -452,7 +452,11 @@ class MultiplayerEndMenu extends Menu {
             const glider_name = multiplayer_client.multiplayer_gliders.gliders[glider_id].name
             setup_text += glider_name + ": " + multiplayer_client.multiplayer_gliders.gliders[glider_id].score.toFixed(0) + "\n"
         }
-        setup_text += "Moving to lobby in : " + (multiplayer_client.multiplayer_gliders.server_time /1000).toFixed(0)
+        var lobby_time = multiplayer_client.multiplayer_gliders.server_time /1000;
+        if (multiplayer_client.multiplayer_gliders.game_state == 1){
+            lobby_time += 10;
+        }
+        setup_text += "Moving to lobby in : " + lobby_time.toFixed(0)
 
         draw_text_lines(this.canvas_element.context, setup_text, 500, 100);
         const main_menu_button = new Button(500, 400, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
