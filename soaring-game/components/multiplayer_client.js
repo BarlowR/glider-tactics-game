@@ -8,28 +8,33 @@ class MultiplayerGliders {
         this.map = {}
         this.game_state 
         this.server_time
+        this.starting_position
     }
     register_glider = (id, name, color) => {
         this.gliders[id] = {
             model: create_jS3(color),
             name: name,
             color: color,
+            score: 0,
             dynamics: new GliderDynamics(0, 0, false,
                                          {x: 0, y: 0, z: 0},
                                          {x:0, y:0, z: 0})
         }
     }
-    update_glider_dynamics = (id, dynamics) => {
+    update_glider = (id, dynamics, score) => {
         this.gliders[id].dynamics = dynamics
+        this.gliders[id].score = score
     }
     update_server_info = (report) => {
         this.starting_position = report.starting_position
         this.server_time = report.world_time
         this.game_state = report.game_state
+        this.starting_position = report.starting_position
     }
     remove_glider = (name) => {
         if (this.gliders[name]){
             delete this.gliders[name]
+            console.log("Removed ", name)
             return true;
         }
         return false
@@ -125,19 +130,26 @@ class MultiplayerClient {
 
     handle_report = (report) => {
         this.multiplayer_gliders.update_server_info(report)
+        // Keep track of the list of currently tracked gliders
         var existing_gliders =  new Set(Object.keys(this.multiplayer_gliders.gliders))
-        for (const [glider_id, glider_info] of Object.entries(report.gliders)){           
+        
+        // Iterate over gliders in the report
+        for (const [glider_id, glider_info] of Object.entries(report.gliders)){    
             if (glider_id in this.multiplayer_gliders.gliders){
-                this.multiplayer_gliders.update_glider_dynamics(glider_id, glider_info.dynamics)
-            } else if (glider_id != this.id){
+                // Update the existing glider      
+                this.multiplayer_gliders.update_glider(glider_id, glider_info.dynamics, glider_info.score)
+            } else {
+                // Register a new glider if it doesn't already exist
                 console.log("Registering New Glider: ", glider_id)
                 this.multiplayer_gliders.register_glider(glider_id, glider_info.name, glider_info.color)
             }
             if (existing_gliders.has(glider_id)){
+                // Remove the glider from the list of current gliders.
                 existing_gliders.delete(glider_id)
             }
         }
         
+        // If any gliders are currently tracked but aren't included in the report, remove them. 
         for (const remaining_glider of existing_gliders){
             console.log("Removing ", remaining_glider)
             this.multiplayer_gliders.remove_glider(remaining_glider)

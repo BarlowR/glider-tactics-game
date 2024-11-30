@@ -224,19 +224,28 @@ class EndMenu extends Menu {
         })
         const crashed_button = new Button(500, 300, 800, 80, this.end_text, default_text_color, "#ffffff", this.canvas_element.context, "crash", () => {
         })
-        const main_menu_button = new Button(500, 400, 340, 80, "Main Menu", inaccessible_text_color, "#ffffff", this.canvas_element.context, "main_menu", () => {
+        
+        this.register_button(crashed_button);
+        this.register_button(score_button);
+        
+        var main_menu_y = 400
+        
+        if (this.is_multiplayer){
+            const multiplayer_message = "Multiplayer Scoring"
+            const multiplayer_scoring = new Button(500, 400, 600, 80, multiplayer_message, inaccessible_text_color, "#ffffff", this.canvas_element.context, "multiplayer_scoring", () => {
+                this.clear_function();
+                menu_context.multiplayer_end()
+            });
+            this.register_button(multiplayer_scoring);
+            
+            main_menu_y = 500;
+        }
+        
+        const main_menu_button = new Button(500, main_menu_y, 340, 80, "Main Menu", inaccessible_text_color, "#ffffff", this.canvas_element.context, "main_menu", () => {
             this.clear_function();
             menu_context.change_state(new MainMenu(this.canvas_element))
         })
         this.register_button(main_menu_button);
-        this.register_button(crashed_button);
-        this.register_button(score_button);
-
-        if (this.is_multiplayer){
-            const multiplayer_wait = new Button(500, 500, 600, 80, "Please Wait for others to finish...", inaccessible_text_color, "#ffffff", this.canvas_element.context, "main_menu", () => {
-            })
-            this.register_button(multiplayer_wait);
-        }
     }
 }
 
@@ -371,7 +380,7 @@ class MultiplayerMenu extends Menu {
         this.fill_background(background_color);
         this.clear = false;
         var multiplayer_client = menu_context.multiplayer_client
-        var setup_text = "Connected Players: " + (1 + Object.keys(multiplayer_client.multiplayer_gliders.gliders).length)
+        var setup_text = "Connected Players: " + (Object.keys(multiplayer_client.multiplayer_gliders.gliders).length)
         if (multiplayer_client.multiplayer_gliders.game_state == 0){
             setup_text += "\nNext Flight begins in : " + (multiplayer_client.multiplayer_gliders.server_time /1000).toFixed(0)
         } else if (multiplayer_client.multiplayer_gliders.game_state == 1 ) {
@@ -419,16 +428,15 @@ class MultiplayerEndMenu extends Menu {
         this.clear = false;
         var multiplayer_client = menu_context.multiplayer_client
 
-        var setup_text = "End of Flight\n" 
-        setup_text += "Scores:\n"
-        setup_text += "User: ____"   
+        var setup_text = "Scores:\n"
         
+
         for (const glider_id of this.competing_gliders){
             if (!(glider_id in multiplayer_client.multiplayer_gliders.gliders)){
                 continue;
-            } 
+            }
             const glider_name = multiplayer_client.multiplayer_gliders.gliders[glider_id].name
-            setup_text += glider_name + ": ___\n"
+            setup_text += glider_name + ": " + multiplayer_client.multiplayer_gliders.gliders[glider_id].score.toFixed(0) + "\n"
         }
         
         setup_text += "Moving to lobby in : " + (multiplayer_client.multiplayer_gliders.server_time /1000).toFixed(0)

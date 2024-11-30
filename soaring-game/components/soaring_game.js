@@ -77,11 +77,19 @@ class SoaringGame {
         }
     }
 
-    check_end_criteria = () => {
+    single_player_end = () => {
         const elapsed_millis = new Date().getTime() - this.world_start_time;
         const elapsed_s = elapsed_millis / 1000;
+        return (elapsed_s > 120);
+    }
 
-        if (this.user_glider.crashed || this.user_glider.flutter || this.user_glider.stalled || (elapsed_s > 120) || this.reset) {
+    check_end_criteria = () => {
+        const single_player_finished = this.single_player_end();
+        if (this.user_glider.crashed || 
+            this.user_glider.flutter || 
+            this.user_glider.stalled || 
+            (single_player_finished && !this.multiplayer_client.server_connected) || 
+            this.reset) {
             console.log("End criteria met");
             this.world.stop();
             var end_text;
@@ -90,14 +98,17 @@ class SoaringGame {
             } else if (this.user_glider.flutter) {
                 end_text = "Fluttered! Airspeed too high"
             } else if (this.user_glider.stalled) {
-                end_text = "Staled! Airspeed too low"
+                end_text = "Stalled! Airspeed too low"
             } else if (this.reset) {
                 end_text = "Pilot Reset (Don't try this in real life)"
                 this.reset = false;
-            } else if (elapsed_s > 120) {
-                end_text = "Great Job"
+            } else if (single_player_finished) {
+                end_text = "Complete, Great Job!"
             }
-            const score = this.score();
+            var score = this.score();
+            if (this.multiplayer_client.server_connected){
+                score = this.multiplayer_client.multiplayer_gliders.gliders[this.multiplayer_client.id].score 
+            }
             this.menu.crashed(score, end_text, this.clear, this.multiplayer_client.server_connected);
         }
     }
@@ -201,7 +212,6 @@ class SoaringGame {
         }
         this.world_start_time = new Date().getTime();
 
-        
         // Create the "world"
         this.world = new World(this.game_window_div,
             this.dim_x,
@@ -213,6 +223,10 @@ class SoaringGame {
             
             var multiplayer_gliders = this.multiplayer_client.multiplayer_gliders.gliders
             for (const glider_id in multiplayer_gliders){
+                if (glider_id == this.multiplayer_client.id){
+                    continue
+                }
+                console.log(glider_id)
                 var multiplayer_glider = multiplayer_gliders[glider_id]
                 this.multiplayer_gliders[glider_id] = new Glider(this.starting_position, multiplayer_glider.model, multiplayer_glider.color, velocity_ne, this.settings.height_scaling_factor);
                 this.world.scene.add(this.multiplayer_gliders[glider_id].mesh, this.multiplayer_gliders[glider_id].line)
@@ -253,6 +267,7 @@ class SoaringGame {
         this.world.stop();
     }
     clear = () => {
+        this.stop()
         const game_canvas = document.getElementById("game_canvas");
         const flight_instrument = document.getElementById("flight_instrument");
         const world_map = document.getElementById("world_map");

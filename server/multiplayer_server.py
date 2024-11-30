@@ -5,11 +5,12 @@ from websockets.asyncio.server import broadcast, serve
 import json
 from enum import IntEnum
 import ssl
+import random
 
 
 UPDATE_TIME_MS = 10
 WAIT_TIME_MS = 10 * 1000
-
+FLIGHT_LENGTH = 60 * 1000
 
 class GameStates(IntEnum):
     WAITING_FOR_START = 0
@@ -28,6 +29,7 @@ class SoaringGameState:
     def register_new_glider(self, id, name, color):
         self.gliders[id] = {"color": color,
                               "name": name,
+                              "score": 0,
                               "dynamics": {"airspeed": 0,
                                            "direction" : 0,
                                             "thermalling" : False,
@@ -37,18 +39,32 @@ class SoaringGameState:
     def remove_glider(self, name):
         self.gliders.pop(name, None)
 
+    def score_glider(self, glider_id):
+        if glider_id not in self.gliders.keys():
+            return
+        glider = self.gliders[glider_id]
+
+        x_dist = abs(self.starting_position["x"] - glider["dynamics"]["position"]["x"])
+        y_dist = abs(self.starting_position["x"] - glider["dynamics"]["position"]["x"])
+        score = x_dist + y_dist
+        self.gliders[glider_id]["score"] = score
+
     def update_dynamics(self, glider_id, dynamics):
         if glider_id in self.gliders.keys():
             self.gliders[glider_id]["dynamics"] = dynamics
+            self.score_glider(glider_id)
 
     def wait_for_start(self):
         self.world_time -= self.period
         if (self.world_time <= 0):
+                self.starting_position["x"] = random.randint(250, 750)
+                self.starting_position["y"] = random.randint(250, 750)
+                print("Starting Position: ", self.starting_position)
                 self.start_flight()
     
     def start_flight(self):
         print("Start Flight")
-        self.world_time = 120 * 1000
+        self.world_time = FLIGHT_LENGTH
         self.game_state = GameStates.RUNNING
 
     def run_flight(self):
@@ -144,7 +160,6 @@ async def handler(websocket):
         message = await websocket.recv()
     except Exception as e:
         return
-    print(message)
     try: 
         event = json.loads(message)
         assert "type" in event.keys()
