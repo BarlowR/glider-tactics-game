@@ -65,7 +65,7 @@ class SoaringGame {
             if (e.type == 'keydown') {
                 this.latest_event = e.key;
             } else if (e.type == 'keyup') {
-                if (e.key == "r") {
+                if (e.key == "Escape") {
                     this.reset = true;
                 } else if (e.key == this.latest_event) {
                     this.latest_event = "";
@@ -100,7 +100,7 @@ class SoaringGame {
             } else if (this.user_glider.stalled) {
                 end_text = "Stalled! Airspeed too low"
             } else if (this.reset) {
-                end_text = "Pilot Reset (Don't try this in real life)"
+                end_text = "Pilot Exit (Don't try this in real life)"
                 this.reset = false;
             } else if (single_player_finished) {
                 end_text = "Complete, Great Job!"

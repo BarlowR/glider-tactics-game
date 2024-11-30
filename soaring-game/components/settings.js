@@ -30,9 +30,30 @@ class SettingsManager {
         this.camera_spring_constant = 0.05;
         this.initial_zoom_level = 50
         this.glider_color_options = ["#fe0101", "#2982ff", "#a8ff94", "#7f00ad"];
-        this.glider_color = this.glider_color_options[0];
+        this.glider_color = localStorage["glider_color"] || this.glider_color_options[0];
         this.use_local_server = CONFIG_NOT_LOADED
+        this.username = ""
         this.load_config()
+        this.load_username()
+        console.log("Welcome ", this.username);
+    }
+    set_glider_color = (color) => {
+        this.glider_color = color
+        localStorage["glider_color"] = color
+    }
+    prompt_username = (prompt_text = "") => {
+        if (prompt_text == ""){
+            prompt_text = "Please enter desired username:";
+        }
+        var username = prompt(prompt_text);
+        this.set_username(username)
+    }
+    set_username = (name) => {
+        localStorage["soaring-game-username"] = name;
+        this.username = name
+    }
+    load_username = () => {
+        this.username = localStorage["soaring-game-username"] || "unnamed_user"
     }
     set_glider_model = (model_name) => {
         if (model_name == "JS3") {

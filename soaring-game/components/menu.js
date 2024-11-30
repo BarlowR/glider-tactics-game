@@ -9,7 +9,7 @@ const instruction_text = `Controls:
 Arrow keys for direction
 Q/A to speed up/slow down
 +/- to zoom map
-R to reset
+Esc to exit
 
 Scoring: 
 Straight line distance from starting position. 
@@ -258,15 +258,31 @@ class SettingsMenu extends Menu {
     }
 
     draw_color_buttons = (menu_context, background_color) => {
-        const choose_color_button = new Button(500, 400, 340, 80, "Choose Color:", NaN, inaccessible_text_color, this.canvas_element.context, "choose_color_button", () => {});
-        const main_menu_button = new Button(500, 600, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
-            menu_context.change_state(new MainMenu(this.canvas_element))
-        })
-        this.fill_background(background_color, background_color);
-
-        this.register_button(choose_color_button);
-        this.register_button(main_menu_button);
         let settings = menu_context.settings;
+        this.fill_background(background_color);
+        
+        const set_username_button = new Button (500, 100, 340, 80, "Change Username", NaN, default_text_color, this.canvas_element.context, "choose_name", () => {
+            settings.prompt_username();
+        })
+        const choose_terrain_button = new Button(500, 200, 340, 80, "Choose Terrain:", NaN, inaccessible_text_color, this.canvas_element.context, "choose_terrain_button", () => {});
+
+        const using_big_terrain = settings.terrain.name == "Big Mountains";
+        const set_big_terrain = new Button( 415, 300, 160, 80, "Big", 
+                                            (using_big_terrain ? default_text_color : NaN), 
+                                            (using_big_terrain ? inaccessible_text_color : default_text_color),
+                                            this.canvas_element.context, "big_terrain", () => {
+            settings.load_map("./assets/maps/big_ranges", "Big Mountains");
+            this.draw_color_buttons(menu_context, background_color);
+        })
+        const set_little_terrain = new Button(  585, 300, 160, 80, "Little", 
+                                                (using_big_terrain? NaN : default_text_color), 
+                                                (using_big_terrain ? default_text_color : inaccessible_text_color),
+                                                this.canvas_element.context, "little_terrain", () => {
+            settings.load_map("./assets/maps/little_ranges", "Little Mountains");
+            this.draw_color_buttons(menu_context, background_color);
+        });        
+        const choose_color_button = new Button(500, 400, 340, 80, "Choose Color:", NaN, inaccessible_text_color, this.canvas_element.context, "choose_color_button", () => {});
+
         const colors = settings.glider_color_options;
         for (let color_idx = 0; color_idx < colors.length; color_idx++) {
             const button_id = "color_" +color_idx;
@@ -280,28 +296,20 @@ class SettingsMenu extends Menu {
             const x_offset = 500 - (x_width/2) + (button_width_w_padding * color_idx)
             var color_button
             color_button = new Button(x_offset, 500, button_width, button_width, "", color, default_text_color, this.canvas_element.context, button_id, () => {
-                settings.glider_color = color
+                settings.set_glider_color(color)
                 this.draw_color_buttons(menu_context, background_color);
             }, is_active_color);
             this.register_button(color_button);
         }
-        const using_big_terrain = settings.terrain.name == "Big Mountains";
-        const set_big_terrain = new Button( 500, 200, 340, 80, "Big Terrain", 
-                                            (using_big_terrain ? default_text_color : NaN), 
-                                            (using_big_terrain ? inaccessible_text_color : default_text_color),
-                                            this.canvas_element.context, "big_terrain", () => {
-            settings.load_map("./assets/maps/big_ranges", "Big Mountains");
-            this.draw_color_buttons(menu_context, background_color);
+        const main_menu_button = new Button(500, 600, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
+            menu_context.change_state(new MainMenu(this.canvas_element))
         })
-        const set_little_terrain = new Button(  500, 300, 340, 80, "Little Terrain", 
-                                                (using_big_terrain? NaN : default_text_color), 
-                                                (using_big_terrain ? default_text_color : inaccessible_text_color),
-                                                this.canvas_element.context, "little_terrain", () => {
-            settings.load_map("./assets/maps/little_ranges", "Little Mountains");
-            this.draw_color_buttons(menu_context, background_color);
-        });        
+        this.register_button(set_username_button);
+        this.register_button(choose_terrain_button);
         this.register_button(set_big_terrain);
         this.register_button(set_little_terrain);
+        this.register_button(choose_color_button);
+        this.register_button(main_menu_button);
     }
 }
 
@@ -342,9 +350,14 @@ class MultiplayerMenu extends Menu {
     build_menu = (menu_context, background_color) =>{
         this.fill_background(background_color);
 
+        
         // Force use of Big Mountains
         var multiplayer_client = menu_context.multiplayer_client;
         var settings = menu_context.settings;
+
+        if (settings.username == "unnamed_user"){
+            settings.prompt_username("Welcome! Please enter your desired username for multiplayer flights")
+        }
         const loading_button = new Button(500, 200, 340, 80, 
             "loading...", NaN, inaccessible_text_color, this.canvas_element.context, "loading", () => {})
         this.register_button(loading_button)
@@ -365,7 +378,7 @@ class MultiplayerMenu extends Menu {
                     this.register_button(main_menu_button)
                     return
                 }
-                multiplayer_client.send_join_message("Rob", settings.glider_color);
+                multiplayer_client.send_join_message(settings.username, settings.glider_color);
                 this.render_wait_menu(menu_context, background_color)
             }, 1000);
             if (!settings.terrain.name == "Big Mountains"){
@@ -380,7 +393,8 @@ class MultiplayerMenu extends Menu {
         this.fill_background(background_color);
         this.clear = false;
         var multiplayer_client = menu_context.multiplayer_client
-        var setup_text = "Connected Players: " + (Object.keys(multiplayer_client.multiplayer_gliders.gliders).length)
+        var setup_text = "Welcome " + menu_context.settings.username + "\n"; 
+        setup_text += "Connected Players: " + (Object.keys(multiplayer_client.multiplayer_gliders.gliders).length)
         if (multiplayer_client.multiplayer_gliders.game_state == 0){
             setup_text += "\nNext Flight begins in : " + (multiplayer_client.multiplayer_gliders.server_time /1000).toFixed(0)
         } else if (multiplayer_client.multiplayer_gliders.game_state == 1 ) {
@@ -438,7 +452,6 @@ class MultiplayerEndMenu extends Menu {
             const glider_name = multiplayer_client.multiplayer_gliders.gliders[glider_id].name
             setup_text += glider_name + ": " + multiplayer_client.multiplayer_gliders.gliders[glider_id].score.toFixed(0) + "\n"
         }
-        
         setup_text += "Moving to lobby in : " + (multiplayer_client.multiplayer_gliders.server_time /1000).toFixed(0)
 
         draw_text_lines(this.canvas_element.context, setup_text, 500, 100);
