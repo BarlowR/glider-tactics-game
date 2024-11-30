@@ -45,7 +45,7 @@ class SoaringGameState:
         glider = self.gliders[glider_id]
 
         x_dist = abs(self.starting_position["x"] - glider["dynamics"]["position"]["x"])
-        y_dist = abs(self.starting_position["x"] - glider["dynamics"]["position"]["x"])
+        y_dist = abs(self.starting_position["y"] - glider["dynamics"]["position"]["y"])
         score = x_dist + y_dist
         self.gliders[glider_id]["score"] = score
 
