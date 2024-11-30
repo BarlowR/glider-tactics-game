@@ -2,6 +2,8 @@ const normal_unit = 1000
 const default_text_color = "#140c0c"
 const inaccessible_text_color = "#948c8c"
 const standard_radius = 400/6;
+import { CONFIG_NOT_LOADED, USE_ONLINE_SERVER, USE_LOCAL_SERVER } from "./settings.js"
+
 
 const instruction_text = `Controls: 
 Arrow keys for direction
@@ -179,7 +181,15 @@ class MainMenu extends Menu {
         const lobby_menu = new Button(500, 300, 340, 80, "Multiplayer Lobby", 
                                       NaN, default_text_color, 
                                       this.canvas_element.context, "lobby", () => {
-            menu_context.multiplayer_client.open_connection()
+            if (menu_context.settings.use_local_server == CONFIG_NOT_LOADED){
+                // do nothing
+                return
+            } else if (menu_context.settings.use_local_server == USE_LOCAL_SERVER) {
+                // Default arguements are for local connection
+                menu_context.multiplayer_client.open_connection()
+            } else if (menu_context.settings.use_local_server == USE_ONLINE_SERVER) {
+                menu_context.multiplayer_client.open_connection("soaring-server.barlowr.com", 8080, true);
+            }
             menu_context.change_state(new MultiplayerMenu(this.canvas_element))
         })
         const instructions_menu = new Button(500, 400, 340, 80, "Instructions", 

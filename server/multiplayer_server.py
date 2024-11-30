@@ -157,10 +157,20 @@ async def handler(websocket):
         await join(websocket, event["id"], event["name"], event["color"])
 
 async def main():
-    # SSL Context setup
-    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-    ssl_context.load_cert_chain(certfile="/etc/letsencrypt/live/soaring-server.barlowr.com/fullchain.pem", 
-                                keyfile="/etc/letsencrypt/live/soaring-server.barlowr.com/privkey.pem")
+
+    config = {}
+    ssl_context = None
+    with open("server/config.json") as f:
+        config = json.load(f)
+        print("Loaded config")
+
+    if (config["use_secure_websocket"]):
+        # SSL Context setup
+        print("Setting up secure websocket")
+        ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        ssl_context.load_cert_chain(certfile=config["certfile"], 
+                                    keyfile=config["keyfile"])
+
 
     async with serve(handler, "0.0.0.0", 8080, ssl=ssl_context):
         await run_game(CONNECTED_PLAYERS, GAME_INSTANCE)

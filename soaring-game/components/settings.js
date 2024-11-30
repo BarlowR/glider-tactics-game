@@ -2,6 +2,10 @@ import { create_jS3 } from "./glider_models/js3"
 import { height_map_to_color_map } from "./terrain_tools.js"
 import { create_terrain_mesh } from "./terrain_tools.js"
 
+const CONFIG_NOT_LOADED = -1
+const USE_ONLINE_SERVER = 0
+const USE_LOCAL_SERVER = 1
+
 class SettingsManager {
     constructor() {
         if (SettingsManager._instance) {
@@ -27,6 +31,8 @@ class SettingsManager {
         this.initial_zoom_level = 50
         this.glider_color_options = ["#fe0101", "#2982ff", "#a8ff94", "#7f00ad"];
         this.glider_color = this.glider_color_options[0];
+        this.use_local_server = CONFIG_NOT_LOADED
+        this.load_config()
     }
     set_glider_model = (model_name) => {
         if (model_name == "JS3") {
@@ -67,6 +73,24 @@ class SettingsManager {
                 console.log("Loaded Thermal Map from " + folder);
             });            
     }
+    load_config = () => {
+        console.log("Loading Config...")
+        fetch("config.json")
+            .then((response) => response.json())
+            .then((response_json) => {
+                if (response_json.use_local_server){
+                    this.use_local_server = USE_LOCAL_SERVER
+                    console.log("Config loaded, using local server")
+                } else {
+                    this.use_local_server = USE_ONLINE_SERVER
+                    console.log("Config loaded, using online server")
+                }
+            }).catch(e => {
+                console.log("No config.json file found, defaulting to local server");
+                this.use_local_server = USE_LOCAL_SERVER
+            })
+    }
+    
     generate_mesh(){
         if (this.terrain.loaded_height_map){
             this.terrain.mesh = create_terrain_mesh(this.terrain.height_map, this.height_scaling_factor);
@@ -89,4 +113,4 @@ class SettingsManager {
     }
 }
 
-export { SettingsManager }
+export { SettingsManager, CONFIG_NOT_LOADED, USE_ONLINE_SERVER, USE_LOCAL_SERVER }

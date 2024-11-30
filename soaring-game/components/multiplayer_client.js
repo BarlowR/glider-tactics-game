@@ -37,18 +37,29 @@ class MultiplayerGliders {
 }
 
 class MultiplayerClient {
-    //34.219.105.242
-    constructor (host = "soaring-server.barlowr.com", port = 8080) {
-        this.host = host
-        this.port = port
+    constructor () {
+        this.host;
+        this.port;
         this.server_connected = false
         this.server_websocket;
         this.multiplayer_gliders = new MultiplayerGliders()
         this.id
     }
 
-    open_connection = () => {
-        this.server_websocket = new WebSocket("wss://" + this.host + ":" + this.port);
+    open_connection = (host = "localhost", port = 8080, secure = false) => {
+        this.host = host
+        this.port = port
+        try{
+            if (secure){
+                this.server_websocket = new WebSocket("wss://" + host + ":" + port);
+            } else {
+                this.server_websocket = new WebSocket("ws://" + host + ":" + port);
+            }
+        }
+        catch (err){
+            console.log("WS can't connect")
+            console.log(err)
+        }
 
         this.server_websocket.onerror = (error) => { 
             console.log("WS can't connect"); 

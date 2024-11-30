@@ -1,0 +1,5 @@
+{
+    "use_secure_websocket": true,
+    "keyfile": "/etc/letsencrypt/live/soaring-server.barlowr.com/privkey.pem",
+    "certfile": "/etc/letsencrypt/live/soaring-server.barlowr.com/fullchain.pem"
+}
