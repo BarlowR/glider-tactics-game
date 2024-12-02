@@ -22,7 +22,7 @@ const glide_polar_js3 = {
 }
 
 function create_jS3(color) {
-    return new GliderModel("JS3", glide_polar_js3, "./assets/toyplane/", color);
+    return new GliderModel("JS3", glide_polar_js3, "./assets/new_toyplane/", color);
 } 
 
 export { create_jS3 }

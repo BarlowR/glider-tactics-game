@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-const k_rotation_ticks = 20
+const k_rotation_ticks = 15
 const k_horizontal_unit_length = 2500 //m
 const k_vertical_unit_length = 1000 //m
 const k_time_scaling = 100 //m
@@ -25,14 +25,19 @@ class GliderModel {
         this.polar = polar;
         this.color = color;
         this.sprite_materials = [
-            new THREE.TextureLoader().load(sprite_folder + 'up.png'),
-            new THREE.TextureLoader().load(sprite_folder + 'right.png'),
-            new THREE.TextureLoader().load(sprite_folder + 'down.png'),
-            new THREE.TextureLoader().load(sprite_folder + 'left.png'),
-            new THREE.TextureLoader().load(sprite_folder + 'up_bank.png'),
-            new THREE.TextureLoader().load(sprite_folder + 'left_bank.png'),
-            new THREE.TextureLoader().load(sprite_folder + 'down_bank.png'),
-            new THREE.TextureLoader().load(sprite_folder + 'right_bank.png'),
+            new THREE.TextureLoader().load(sprite_folder + '0000_up.png'),
+            new THREE.TextureLoader().load(sprite_folder + '0000_right.png'),
+            new THREE.TextureLoader().load(sprite_folder + '0000_down.png'),
+            new THREE.TextureLoader().load(sprite_folder + '0000_left.png'),
+            new THREE.TextureLoader().load(sprite_folder + '0001_up.png'),
+            new THREE.TextureLoader().load(sprite_folder + '0001_upright.png'),
+            new THREE.TextureLoader().load(sprite_folder + '0001_right.png'),
+            new THREE.TextureLoader().load(sprite_folder + '0001_rightdown.png'),
+            new THREE.TextureLoader().load(sprite_folder + '0001_down.png'),
+            new THREE.TextureLoader().load(sprite_folder + '0001_downleft.png'),
+            new THREE.TextureLoader().load(sprite_folder + '0001_left.png'),
+            new THREE.TextureLoader().load(sprite_folder + '0001_leftup.png'),
+            
         ]
         for (var tex in this.sprite_materials) {
             this.sprite_materials[tex].minFilter = THREE.NearestFilter;
@@ -55,7 +60,7 @@ class Glider {
 
         this.mesh = new THREE.Sprite(material);
         this.mesh.position.set(0, 0, -5);
-        this.mesh.scale.set(2, 2 / 1.5, 1);
+        this.mesh.scale.set(5, 5 / 1.5, 1);
         // This should probably be an even divisor of 1000. 
         // This 
 
@@ -73,6 +78,7 @@ class Glider {
         this.crashed = false;
         this.flutter = false;
         this.stalled = false;
+        this.start_turn_tick = 0;
 
         const line_material = new THREE.LineBasicMaterial({
             color: 0x0000ff,
@@ -194,25 +200,21 @@ class Glider {
         }
     }
     update_sprite(tick) {
+        // 0 for up, 1 for right, 2 for down, 3 for left
+        const direction_index = Math.floor(this.dynamics.direction/(Math.PI/2))
+        console.log(direction_index)
+       
         if (this.dynamics.thermalling) {
-            var circle = (Math.floor(tick / k_rotation_ticks) % 4);
-            if (circle == 0) {
-                this.mesh.material.map = this.glider_model.sprite_materials[4];
-            } else if (circle == 1) {
-                this.mesh.material.map = this.glider_model.sprite_materials[5];
-            } else if (circle == 2) {
-                this.mesh.material.map = this.glider_model.sprite_materials[6];
-            } else if (circle == 3) {
-                this.mesh.material.map = this.glider_model.sprite_materials[7];
+            const sprite_offset = 4; 
+            if (this.start_turn_tick == -1){
+                this.start_turn_tick = tick;
             }
-        } else if (this.dynamics.direction == 0) {
-            this.mesh.material.map = this.glider_model.sprite_materials[0];
-        } else if (this.dynamics.direction == Math.PI/2) {
-            this.mesh.material.map = this.glider_model.sprite_materials[1];
-        } else if (this.dynamics.direction == Math.PI) {
-            this.mesh.material.map = this.glider_model.sprite_materials[2];
-        } else if (this.dynamics.direction == 3 * Math.PI/2) {
-            this.mesh.material.map = this.glider_model.sprite_materials[3];
+
+            var circle_direction = (1 + 2*direction_index + Math.floor(((tick - this.start_turn_tick) / k_rotation_ticks))) % 8
+            this.mesh.material.map = this.glider_model.sprite_materials[sprite_offset + circle_direction];
+        } else  {
+                this.mesh.material.map = this.glider_model.sprite_materials[direction_index];
+                this.start_turn_tick = -1
         }
     }
     update(tick, dt, latest_event, height_map, thermal_map) {
