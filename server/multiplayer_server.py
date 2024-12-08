@@ -6,22 +6,39 @@ import json
 from enum import IntEnum
 import ssl
 import random
+import bisect 
 
 
 UPDATE_TIME_MS = 10
 WAIT_TIME_MS = 10 * 1000
-FLIGHT_LENGTH = 60 * 1000
+FLIGHT_LENGTH = 120 * 1000
 
 class GameStates(IntEnum):
     WAITING_FOR_START = 0
     RUNNING = 1
     COMPLETED = 2
 
+
+def load_high_scores():
+    high_scores = {}
+    with open("server/high_scores.json", "r") as f:
+        high_scores = json.load(f)
+    return high_scores[-5:]
+
+def save_score(name, score):
+    print(f"Saving score for {name}: {score}")
+    high_scores = load_high_scores()
+    # insert new score into sorted score table
+    bisect.insort(high_scores, [name, int(score)], key=lambda x: x[1])
+    with open("server/high_scores.json", "w") as f:
+        json.dump(high_scores, f, indent=2)
+
 class SoaringGameState:
     gliders = {}
     map = None
     game_state = GameStates.WAITING_FOR_START
     starting_position = {"x": 300, "y": 300, "z": 3}
+    high_scores = load_high_scores()
     world_time = WAIT_TIME_MS
     def __init__(self, period):
         self.period = period
@@ -77,6 +94,9 @@ class SoaringGameState:
         print("End")
         self.world_time = WAIT_TIME_MS
         self.game_state = GameStates.COMPLETED
+        for glider in self.gliders.values():
+            save_score(glider["name"], glider["score"])
+        self.high_scores = load_high_scores()
 
 
     def teardown(self):
@@ -104,11 +124,11 @@ class SoaringGameState:
                             "report" :  {"world_time" : self.world_time,
                                         "game_state" : int(self.game_state),
                                         "starting_position" : self.starting_position,
-                                        "gliders" : self.gliders}})
+                                        "gliders" : self.gliders, 
+                                        "high_scores" : self.high_scores}})
     
     def check_finished(self):
         return self.world_time <= 0
-
 
 CONNECTED_PLAYERS = set()
 GAME_INSTANCE = SoaringGameState(UPDATE_TIME_MS)
@@ -178,6 +198,9 @@ async def main():
     with open("server/config.json") as f:
         config = json.load(f)
         print("Loaded config")
+
+    
+
 
     if (config["use_secure_websocket"]):
         # SSL Context setup

@@ -404,7 +404,15 @@ class MultiplayerMenu extends Menu {
         }
         
         draw_text_lines(this.canvas_element.context, setup_text, 500, 100);
-        const main_menu_button = new Button(500, 300, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
+
+        var high_scores = "High Scores: \n"
+        for (const score of multiplayer_client.multiplayer_gliders.high_scores.reverse()){
+            console.log(score)
+            high_scores += score[0].padStart(20) + ": " + String(score[1]).padEnd(20) + "\n"
+        }
+        draw_text_lines(this.canvas_element.context, high_scores, 500, 300);
+
+        const main_menu_button = new Button(500, 500, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
             menu_context.change_state(new MainMenu(this.canvas_element))
             multiplayer_client.close_connection();
             this.clear = true;

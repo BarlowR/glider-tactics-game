@@ -9,6 +9,7 @@ class MultiplayerGliders {
         this.game_state 
         this.server_time
         this.starting_position
+        this.high_scores = []
     }
     register_glider = (id, name, color) => {
         this.gliders[id] = {
@@ -30,6 +31,7 @@ class MultiplayerGliders {
         this.server_time = report.world_time
         this.game_state = report.game_state
         this.starting_position = report.starting_position
+        this.high_scores = report.high_scores
     }
     remove_glider = (name) => {
         if (this.gliders[name]){

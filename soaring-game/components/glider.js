@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-const k_rotation_ticks = 15
+const k_rotation_ticks = 10
 const k_horizontal_unit_length = 2500 //m
 const k_vertical_unit_length = 1000 //m
 const k_time_scaling = 100 //m
@@ -202,7 +202,6 @@ class Glider {
     update_sprite(tick) {
         // 0 for up, 1 for right, 2 for down, 3 for left
         const direction_index = Math.floor(this.dynamics.direction/(Math.PI/2))
-        console.log(direction_index)
        
         if (this.dynamics.thermalling) {
             const sprite_offset = 4; 
