@@ -23,7 +23,7 @@ def load_high_scores():
     high_scores = {}
     with open("server/high_scores.json", "r") as f:
         high_scores = json.load(f)
-    return high_scores[-5:]
+    return high_scores
 
 def save_score(name, score):
     print(f"Saving score for {name}: {score}")
