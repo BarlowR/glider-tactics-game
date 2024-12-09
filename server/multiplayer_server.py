@@ -125,7 +125,7 @@ class SoaringGameState:
                                         "game_state" : int(self.game_state),
                                         "starting_position" : self.starting_position,
                                         "gliders" : self.gliders, 
-                                        "high_scores" : self.high_scores}})
+                                        "high_scores" : self.high_scores[0-5:]}})
     
     def check_finished(self):
         return self.world_time <= 0
