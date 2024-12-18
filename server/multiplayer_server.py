@@ -29,9 +29,24 @@ def save_score(name, score):
     print(f"Saving score for {name}: {score}")
     high_scores = load_high_scores()
     # insert new score into sorted score table
-    bisect.insort(high_scores, [name, int(score)], key=lambda x: x[1])
-    with open("server/high_scores.json", "w") as f:
-        json.dump(high_scores, f, indent=2)
+    index_to_pop = -1
+    found_name = False
+    for index in range(len(high_scores)):
+        existing_name, existing_score = high_scores[index]
+        if (name == existing_name):
+            found_name = True
+            if score > existing_score:
+                # Set the index if the name matches and the new score is higher than the existing score
+                index_to_pop = index
+                break
+
+    # Remove and insort the new entry if the index has been set
+    if (index_to_pop >= 0):
+        high_scores.pop(index_to_pop)
+    if ((index_to_pop >= 0) or not found_name):
+        bisect.insort(high_scores, [name, int(score)], key=lambda x: x[1])
+        with open("server/high_scores.json", "w") as f:
+            json.dump(high_scores, f, indent=2)
 
 class SoaringGameState:
     gliders = {}
