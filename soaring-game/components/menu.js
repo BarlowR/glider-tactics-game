@@ -7,6 +7,7 @@ import { CONFIG_NOT_LOADED, USE_ONLINE_SERVER, USE_LOCAL_SERVER } from "./settin
 
 const instruction_text = `Controls: 
 Arrow keys for direction
+Space key to stop & thermal
 Q/A to speed up/slow down
 +/- to zoom map
 Esc to exit
@@ -405,12 +406,12 @@ class MultiplayerMenu extends Menu {
         
         draw_text_lines(this.canvas_element.context, setup_text, 500, 100);
 
-        var high_scores = "High Scores: \n"
+        var high_scores = "High Scores \n\n"
         for (const score of multiplayer_client.multiplayer_gliders.high_scores.reverse()){
             console.log(score)
-            high_scores += score[0].padStart(20) + ": " + String(score[1]).padEnd(20) + "\n"
+            high_scores += score[0].padStart(20) + ": " + String(score[1]).padEnd(15) + "\n"
         }
-        draw_text_lines(this.canvas_element.context, high_scores, 500, 300);
+        draw_text_lines(this.canvas_element.context, high_scores, 500, 200);
 
         const main_menu_button = new Button(500, 500, 340, 80, "Main Menu", NaN, default_text_color, this.canvas_element.context, "main_menu", () => {
             menu_context.change_state(new MainMenu(this.canvas_element))
